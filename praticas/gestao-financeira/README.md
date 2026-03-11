@@ -44,7 +44,7 @@ const style = StyleSheet.create({
   },
 });
 ```
-2. `components/DescriptionInput.jsx`
+### 2. `components/DescriptionInput.jsx`
 *Atenção aqui para o `returnKeyType="next"` e o `onSubmitEditing`. Eles são os responsáveis por mandar o cursor para o próximo input!*
 
 ```js
@@ -66,7 +66,7 @@ export default function DescriptionInput({ form, setForm, valueInputRef }) {
   )
 }
 ```
-3. `components/CurrencyInput.jsx`
+### 3. `components/CurrencyInput.jsx`
 *Recebe a `valueInputRef` para focar neste campo quando o anterior for preenchido.*
 
 ```js
@@ -98,7 +98,7 @@ export default function CurrencyInput({ form, setForm, valueInputRef }) {
   )
 }
 ```
-4. `components/DatePicker.jsx`
+### 4. `components/DatePicker.jsx`
 ```jsx
 import { Platform, Text, TextInput, TouchableOpacity, View } from "react-native"
 import { globalStyles } from "../styles/globalStyles"
@@ -140,7 +140,7 @@ export default function DatePicker({ form, setForm }) {
   )
 }
 ```
-5. `components/CategoryPicker.jsx`
+### 5. `components/CategoryPicker.jsx`
 ```jsx
 import { Picker } from "@react-native-picker/picker"
 import { StyleSheet, Text, View } from "react-native"
