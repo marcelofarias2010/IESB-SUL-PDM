@@ -1,97 +1,158 @@
-# 💻 Aula 01: Criação do Projeto, Setup Inicial e Navegação por Abas (Tab Navigation)
+# 💻 Aula 02: Layout e Estado do Formulário (Adicionar Transações)
 
-Chegou a hora de colocar a mão na massa! Nesta primeira etapa de desenvolvimento do app **Money** (Gestão Financeira), vamos criar o projeto do zero, limpar o código padrão gerado pelo Expo e configurar a base do nosso aplicativo: a navegação entre as três telas principais usando uma Tab Bar personalizada.
+Dando continuidade ao nosso aplicativo **Money**, nesta aula vamos focar na aba do meio: a tela de **Adicionar Transações**. O objetivo aqui é desenhar a interface, criar inputs para os dados e conectar tudo isso a um estado (`useState`) inteligente para gerenciar o formulário.
 
 ## 🎯 Objetivos da Aula
-* Criar um projeto React Native usando o template padrão do Expo.
-* Rodar o aplicativo no emulador/celular.
-* Limpar arquivos e componentes desnecessários do projeto padrão.
-* Criar a estrutura inicial das 3 telas principais: `Transactions`, `AddTransaction` e `Summary`.
-* Configurar o `Tabs` do Expo Router para criar a barra de navegação inferior.
-* Personalizar a Tab Bar (cores, ícones e um botão central estilizado).
+* Adicionar o ícone do aplicativo no `app.json`.
+* Criar a estrutura base da tela de Adicionar Transações (Inputs e Botão).
+* Criar um arquivo de estilos globais (`GlobalStyles.js`) para reaproveitamento de código.
+* Componentizar o botão principal da aplicação.
+* Gerenciar o estado de múltiplos inputs usando um único `useState` contendo um objeto.
 
-## 🚀 Passo 0: Criando e Rodando o Projeto
-Antes de limparmos a casa, precisamos construí-la. Abra o seu terminal (ou o terminal integrado do VS Code) na pasta onde deseja salvar o projeto e execute o comando de criação do Expo:
+## 📱 Passo 1: Configurando o Ícone do App
+Antes de codar a tela, vamos deixar nosso app com cara de app profissional! 
+Abra o arquivo `app.json` (na raiz do projeto) e localize as configurações de ícone e splash screen. Substitua os caminhos pelas imagens que você disponibilizou na pasta de `assets`:
 
-```bash
-npx create-expo-app
-```
-O terminal fará algumas perguntas. Quando ele perguntar o nome do aplicativo (`What is your app named?`), digite: **gestao-financeira**.
-
-Aguarde a instalação dos pacotes (isso pode levar cerca de um minuto). Assim que aparecer a mensagem `✅ Your project is ready!`, preste muita atenção neste detalhe clássico que costuma gerar o erro `ENOENT`:
-
-- ⚠️ **Atenção:** Você não pode rodar o projeto de fora da pasta dele! Se você tentar rodar `npm run android` agora, o terminal não encontrará o arquivo `package.json`. Você deve entrar na pasta do projeto primeiro!
-
-Execute os comandos abaixo na sequência:
-```bash
-# 1. Entre na pasta do projeto
-cd gestao-financeira
-
-# 2. Inicie o servidor do Expo para Android (ou use npm start para abrir o menu geral)
-npm run android
-```
-
-Se a porta 8081 já estiver em uso, o Expo perguntará se você deseja usar a porta 8082. Basta digitar `yes` (y). O Expo irá gerar um **QR Code** no terminal. Escaneie-o com o aplicativo Expo Go no seu celular (Android) ou Câmera (iOS) para ver o app rodando!
-
-## 🧹 Passo 1: Limpeza do Projeto
-Quando criamos um projeto, ele vem com vários arquivos de exemplo. Vamos fazer uma faxina:
-1. Delete os arquivos desnecessários das pastas `assets/images`, `components` e `constants`.
-2. No arquivo `app/(tabs)/_layout.tsx`, apague todo o conteúdo e deixe retornando apenas uma `<View>` temporária.
-3. Altere as extensões dos arquivos de rotas de `.tsx` para `.jsx` (já que estamos usando JavaScript padrão e não TypeScript).
-
-## 📄 Passo 2: Criando as Telas Base
-Dentro da pasta `app/(tabs)`, vamos garantir que temos os 3 arquivos principais que representarão nossas abas:
-
-- `index.jsx` (Tela inicial - Lista de transações)
-- `AddTransactions.jsx` (Tela de formulário)
-- `summary.jsx` (Tela de resumo)
-
-*Exemplo da estrutura básica de cada tela:*
-
-```js
-import { Text } from 'react-native';
-
-export default function Transactions() {
-  return <Text>Transações</Text>;
+```json
+{
+  "expo": {
+    "icon": "./assets/images/icon.png",
+    "splash": {
+      "image": "./assets/images/splash.png"
+    }
+  }
 }
 ```
-## 🧭 Passo 3: Configurando o TabsLayout
-No arquivo de layout das abas (`_layout.jsx`), vamos configurar o componente `<Tabs>` do expo-router e definir as telas:
+*Atenção: Para que o ícone atualize no Expo Go, geralmente é necessário parar o servidor no terminal (`Ctrl+C`) e rodar novamente (`npm run android`).*
 
+## 🏗️ Passo 2: Estrutura Base e Estilos Globais
+Na tela `AddTransactions.jsx`, vamos precisar de quatro campos: Descrição, Valor, Data e Categoria. Para que as telas fiquem padronizadas, vamos criar uma pasta `styles/` na raiz e dentro dela o arquivo `globalStyles.js`.
+
+Criando o `globalStyles.js`:
 ```js
-import { Tabs } from 'expo-router';
+import { StyleSheet } from 'react-native';
+import { Colors } from '../constants/colors'; // Ajuste o caminho conforme seu projeto
 
-export default function TabsLayout() {
+export const globalStyles = StyleSheet.create({
+  screenContainer: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  content: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    gap: 12,
+  },
+  input: {
+    height: 40,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    backgroundColor: Colors.white,
+  },
+  inputLabel: {
+    fontSize: 14,
+    color: Colors.text,
+    marginBottom: 4,
+    fontWeight: 'bold',
+  }
+});
+```
+**Por que usar `padding` na ScrollView?**
+Ao invés de usar `margin`, usamos `paddingHorizontal` na nossa `<ScrollView>`. Se usássemos margem, a barra de rolagem visual do celular ficaria "descolada" da borda da tela. O `padding` garante que o conteúdo afaste, mas a barra de rolagem continue encostada no canto!
+
+## 🔘 Passo 3: Componentizando o Botão
+Em vez de criar um botão do zero em cada tela, vamos criar um componente reutilizável.
+Crie o arquivo `components/Button.jsx`:
+
+```javascript
+import { TouchableHighlight, Text, StyleSheet } from 'react-native';
+import { Colors } from '../constants/colors';
+
+export default function Button({ children, onPress }) {
   return (
-    <Tabs>
-      <Tabs.Screen name="index" />
-      <Tabs.Screen name="AddTransactions" />
-      <Tabs.Screen name="summary" />
-    </Tabs>
+    <TouchableHighlight style={styles.button} onPress={onPress} underlayColor={Colors.primaryDark}>
+      <Text style={styles.text}>{children}</Text>
+    </TouchableHighlight>
+  );
+}
+
+const styles = StyleSheet.create({
+  button: {
+    backgroundColor: Colors.primary,
+    height: 50,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  text: {
+    color: Colors.white,
+    fontSize: 16,
+    fontWeight: 'bold',
+  }
+});
+```
+## 🧠 Passo 4: O Estado Centralizado (O pulo do gato!)
+Geralmente, criamos um `useState` para cada input (`const [descricao, setDescricao] = useState('')`). Mas como temos 4 campos, isso pode ficar confuso. Vamos aprender uma técnica avançada: um único estado com um objeto dentro!
+
+No arquivo `AddTransactions.jsx`:
+
+```jsx
+import { useState } from 'react';
+import { View, Text, TextInput, ScrollView, Alert } from 'react-native';
+import Button from '../components/Button';
+import { globalStyles } from '../styles/globalStyles';
+
+export default function AddTransactions() {
+  // Estado inicial como um objeto
+  const [form, setForm] = useState({
+    description: '',
+    value: '',
+    date: '',
+    category: 'Renda'
+  });
+
+  const handleAddTransaction = () => {
+    Alert.alert("Dados Salvos!", `Desc: ${form.description} \nValor: ${form.value}`);
+  };
+
+  return (
+    <ScrollView style={globalStyles.screenContainer} contentContainerStyle={globalStyles.content}>
+      
+      {/* Campo Descrição */}
+      <View>
+        <Text style={globalStyles.inputLabel}>Descrição</Text>
+        <TextInput 
+          style={globalStyles.input}
+          value={form.description}
+          // Usamos o Spread Operator (...) para copiar o form antigo e alterar só a description!
+          onChangeText={(text) => setForm({ ...form, description: text })}
+        />
+      </View>
+
+      {/* Campo Valor */}
+      <View>
+        <Text style={globalStyles.inputLabel}>Valor</Text>
+        <TextInput 
+          style={globalStyles.input}
+          keyboardType="numeric" // Teclado de números!
+          value={form.value}
+          onChangeText={(text) => setForm({ ...form, value: text })}
+        />
+      </View>
+
+      {/* Adicione os campos Data e Categoria de forma similar... */}
+
+      <View style={{ marginTop: 30 }}>
+        <Button title="Adicionar" onPress={handleAddTransaction} />
+      </View>
+
+    </ScrollView>
   );
 }
 ```
-*Não se esqueça de registrar esse grupo de abas no layout principal (`app/_layout.jsx`) dentro de um `<Stack>`.*
-
-## 🎨 Passo 4: Estilizando o Cabeçalho e a Status Bar
-Vamos deixar o app com a identidade visual do Figma.
-
-1. **Cores Centralizadas:** Crie um arquivo `colors.js` (ou use o fornecido no repositório) para armazenar os códigos hexadecimais (ex: verde primário, cinza inativo).
-2. **Status Bar:** No `app/_layout.jsx`, adicione o componente `<StatusBar>` e defina o `style="light"` e o `backgroundColor` primário.
-3. **Header (Cabeçalho):** No `TabsLayout`, use a propriedade `screenOptions` para pintar o fundo do cabeçalho de verde, deixar o texto branco e centralizá-lo (`headerTitleAlign: 'center'`).
-
-## 🔘 Passo 5: A Tab Bar Personalizada
-O grande charme dessa interface é o botão central flutuante. Em vez de um ícone comum, a aba do meio ("Adicionar") será um grande círculo verde com um sinal de "mais".
-
-**Como fazer isso nas `options` da aba `AddTransactions`:**
-1. Esconda o nome da aba usando `tabBarLabel`: ''.
-2. No `tabBarIcon`, retorne uma `<View>` estilizada como um círculo (usando `width`, `height`, `borderRadius` e `backgroundColor`).
-3. Dentro dessa View, coloque o ícone do `MaterialIcons` (nome `add`) com a cor branca.
-4. Para evitar que o botão fique cortado, aumente a altura total da barra através do `tabBarStyle` global.
-
-*Dica Extra:* Para um visual mais limpo, você pode trocar o botão padrão da aba por um `<TouchableOpacity>` usando a propriedade `tabBarButton`, ajustando o `activeOpacity` para remover aquele fundo cinza indesejado ao clicar.
-
 ✅ **O que alcançamos hoje?**
-Seu aplicativo agora foi devidamente inicializado, possui três telas roteadas, um cabeçalho verde alinhado e uma barra inferior personalizada com um botão de ação centralizado e esteticamente agradável.
+Nossa tela de adição já tem cara de formulário real! Aprendemos a criar estilos globais para padronizar o app, criamos um botão customizado e, o mais importante, aprendemos a gerenciar um formulário inteiro usando um único estado do React.
 
-**Próximo Passo:** No próximo commit, daremos vida à tela do meio, construindo o **Formulário de Adicionar Transação!**
+**Próximo Passo:** Por enquanto, Data e Categoria são apenas campos de texto normais. Na próxima aula, vamos evoluir isso introduzindo um **DatePicker** e um **Dropdown** de verdade!
