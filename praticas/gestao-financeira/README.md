@@ -1,205 +1,84 @@
-# 💻 Aula 04: Componentização, UX de Formulários e Teclado
+# 💻 Aula 05: Estado Global e Persistência de Dados (Context API e AsyncStorage)
 
-Nesta aula, vamos dar um "banho de loja" no nosso código. O arquivo `AddTransactions.jsx` está ficando gigante e misturando muita responsabilidade. Vamos transformá-lo em um código limpo (Clean Code) dividindo os inputs em componentes menores. Além disso, vamos implementar melhorias vitais de UX (Experiência do Usuário) para lidar com o teclado do celular.
+Até agora, conseguimos preencher o formulário perfeitamente, mas os dados estão presos na tela de "Adicionar" e somem assim que o aplicativo é reiniciado. Nesta aula, vamos resolver esses dois problemas usando a **Context API** do React (para compartilhar dados entre todas as abas) e o **AsyncStorage** (para salvar na memória do celular).
+
+
 
 ## 🎯 Objetivos da Aula
-* Componentizar todos os inputs (`CategoryPicker`, `DatePicker`, `CurrencyInput`, `DescriptionInput`).
-* Esconder a Tab Bar quando o teclado abrir (`tabBarHideOnKeyboard`).
-* Prevenir que o teclado cubra o formulário usando `KeyboardAvoidingView`.
-* Fechar o teclado ao tocar fora do formulário usando `TouchableWithoutFeedback`.
-* Melhorar o fluxo de digitação usando `useRef` para pular para o próximo campo ao apertar "Enter" (Next).
+* Entender por que precisamos de um estado global (evitar *Prop Drilling*).
+* Criar um contexto usando `createContext` e `Provider`.
+* Envolver a aplicação com o Estado Global no Root Layout.
+* Instalar e usar o `@react-native-async-storage/async-storage`.
+* Salvar e recuperar dados do armazenamento local.
 
 ---
 
-## 🧱 Passo 1: Criando os Componentes (Lego)
-Crie os arquivos abaixo dentro da sua pasta `components/`. Eles serão os nossos "blocos de montar". Repare que passamos `form` e `setForm` como propriedades (`props`) para que eles consigam alterar o estado centralizado que ficará na tela principal.
+## 🌐 Passo 1: Criando o Estado Global (Context API)
+Como nossas três telas precisam ver a mesma lista de transações, precisamos de um "guarda-chuva" que segure esses dados para toda a aplicação.
 
-### 1. `components/Button.jsx`
+Crie uma pasta chamada `contexts` na raiz do projeto e adicione o arquivo `GlobalState.jsx`. Nele, vamos criar nosso contexto e também já deixar preparado o código que vai buscar as informações salvas no celular ao abrir o app:
+
 ```javascript
-import { StyleSheet, Text } from "react-native";
-import { TouchableHighlight } from "react-native";
-import { colors } from "../constants/colors";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createContext, useEffect, useState } from "react";
 
-export default function Button({ children, onPress }) {
+// 1. Criando o contexto
+export const MoneyContext = createContext();
+
+export default function GlobalState({ children }) {
+  const [transactions, setTransactions] = useState([]);
+
+  // Busca os dados no celular assim que o componente é montado
+  useEffect(() => {
+    const getAsyncStorage = async () => {
+      try {
+        const storedTransactions = await AsyncStorage.getItem("transactions");
+        if (storedTransactions) {
+          // AsyncStorage só guarda Textos (Strings).
+```
+### ☂️ Passo 2: Envolvendo a Aplicação com o Contexto
+Para que o `MoneyContext` funcione, ele precisa abraçar toda a nossa árvore de navegação. Abra o arquivo `app/_layout.jsx` (ou `RootLayout`) e envolva o `<Stack>` com o seu novo `GlobalState`:
+
+```jsx
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { colors } from "../constants/colors";
+import GlobalState from "../contexts/GlobalState";
+
+export default function RootLayout() {
   return (
-    <TouchableHighlight style={style.background} onPress={onPress}>
-      <Text style={style.text}>{children}</Text>
-    </TouchableHighlight>
+    // Agora todas as telas dentro do Stack tem acesso ao Contexto!
+    <GlobalState>
+      <StatusBar backgroundColor={colors.primary} style="light" />
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+    </GlobalState>
   );
 }
-
-const style = StyleSheet.create({
-  background: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    height: 44,
-    borderRadius: 8,
-    backgroundColor: colors.primary,
-  },
-  text: {
-    color: colors.primaryContrast,
-    fontSize: 18,
-    fontWeight: "600",
-  },
-});
 ```
-### 2. `components/DescriptionInput.jsx`
-*Atenção aqui para o `returnKeyType="next"` e o `onSubmitEditing`. Eles são os responsáveis por mandar o cursor para o próximo input!*
-
-```js
-import { Text, TextInput, View } from "react-native"
-import { globalStyles } from "../styles/globalStyles"
-
-export default function DescriptionInput({ form, setForm, valueInputRef }) {
-  return (
-    <View>
-      <Text style={globalStyles.inputLabel}>Descrição</Text>
-      <TextInput
-        value={form.description}
-        returnKeyType="next"
-        onChangeText={(text) => setForm({ ...form, description: text })}
-        onSubmitEditing={() => valueInputRef.current.focus()}
-        style={globalStyles.input}
-      />
-    </View>
-  )
-}
+### 💾 Passo 3: Instalando o AsyncStorage
+Pare o servidor no seu terminal (`Ctrl+C`) e instale a biblioteca de armazenamento local do React Native:
+```bash
+npx expo install @react-native-async-storage/async-storage
 ```
-### 3. `components/CurrencyInput.jsx`
-*Recebe a `valueInputRef` para focar neste campo quando o anterior for preenchido.*
+*Depois de instalar, rode `npm run android` novamente.*
 
-```js
-import { Text, TextInput, View } from "react-native"
-import { globalStyles } from "../styles/globalStyles"
-
-export default function CurrencyInput({ form, setForm, valueInputRef }) {
-  const handleCurrencyChange = (text) => {
-    const formattedValue = text.replace(/\D/g, "")
-    const numberValue = formattedValue ? parseFloat(formattedValue) / 100 : 0
-
-    setForm({ ...form, value: numberValue })
-  }
-
-  return (
-    <View>
-      <Text style={globalStyles.inputLabel}>Valor</Text>
-      <TextInput
-        ref={valueInputRef}
-        value={form.value.toLocaleString("pt-BR", {
-          style: "currency",
-          currency: "BRL"
-        })}
-        onChangeText={handleCurrencyChange}
-        keyboardType="numeric"
-        style={globalStyles.input}
-      />
-    </View>
-  )
-}
-```
-### 4. `components/DatePicker.jsx`
-```jsx
-import { Platform, Text, TextInput, TouchableOpacity, View } from "react-native"
-import { globalStyles } from "../styles/globalStyles"
-import { useState } from "react"
-import RNDateTimePicker from "@react-native-community/datetimepicker"
-
-export default function DatePicker({ form, setForm }) {
-  const [showPicker, setShowPicker] = useState(false)
-
-  const handleDateChange = (_, selectDate) => {
-    setShowPicker(false)
-
-    if (selectDate) {
-      setForm({ ...form, date: selectDate })
-    }
-  }
-
-  return (
-    <View>
-      <Text style={globalStyles.inputLabel}>Data</Text>
-      <TouchableOpacity onPress={() => setShowPicker(true)}>
-        <TextInput
-          value={form.date.toLocaleDateString("pt-BR")}
-          onChangeText={(text) => setForm({ ...form, date: text })}
-          style={globalStyles.input}
-          editable={false}
-        />
-      </TouchableOpacity>
-
-      {showPicker && (
-        <RNDateTimePicker
-          mode="date"
-          display={Platform.OS === "ios" ? "inline" : "default"}
-          value={form.date}
-          onChange={handleDateChange}
-        />
-      )}
-    </View>
-  )
-}
-```
-### 5. `components/CategoryPicker.jsx`
-```jsx
-import { Picker } from "@react-native-picker/picker"
-import { StyleSheet, Text, View } from "react-native"
-import { globalStyles } from "../styles/globalStyles"
-import { colors } from "../constants/colors"
-import { categories } from "../constants/categories"
-
-export default function CategoryPicker({ form, setForm }) {
-  return (
-    <View>
-      <Text style={globalStyles.inputLabel}>Categoria</Text>
-      <View style={styles.picker}>
-        <Picker
-          selectedValue={form.category}
-          onValueChange={(itemValue) => setForm({ ...form, category: itemValue })}
-        >
-          <Picker.Item label={categories.income.displayName} value={categories.income.name} />
-          <Picker.Item label={categories.food.displayName} value={categories.food.name} />
-          <Picker.Item label={categories.house.displayName} value={categories.house.name} />
-          <Picker.Item label={categories.education.displayName} value={categories.education.name} />
-          <Picker.Item label={categories.travel.displayName} value={categories.travel.name} />
-        </Picker>
-      </View>
-    </View>
-  )
-}
-
-const styles = StyleSheet.create({
-  picker: {
-    display: "flex",
-    justifyContent: "center",
-    height: 44,
-    borderColor: colors.secondaryText,
-    borderWidth: 1,
-    borderRadius: 8,
-    flexGrow: 1
-  }
-})
-```
-## 📱 Passo 2: Montando o Quebra-Cabeça (A Tela Principal)
-Agora que temos todos os nossos componentes menores, o arquivo `app/(tabs)/add-transactions.jsx` ficará incrivelmente limpo. É aqui que implementaremos o `KeyboardAvoidingView` (para a tela subir com o teclado) e o `TouchableWithoutFeedback` (para fechar o teclado ao clicar fora).
+### ➕ Passo 4: Salvando Transações de Verdade
+Agora vamos atualizar nossa tela de formulário (`app/(tabs)/add-transactions.jsx`). Em vez de apenas dar um `Alert`, vamos puxar as transações do contexto, adicionar a nova, atualizar o contexto e salvar no `AsyncStorage`.
 
 ```jsx
-import {
-  View,
-  ScrollView,
-  Alert,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Keyboard,
-  TouchableWithoutFeedback,
-} from "react-native";
+import { View, ScrollView, Alert, StyleSheet, KeyboardAvoidingView, Keyboard, TouchableWithoutFeedback } from "react-native";
 import { globalStyles } from "../../styles/globalStyles";
 import Button from "../../components/Button";
-import { useRef, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import DescriptionInput from "../../components/DescriptionInput";
 import CurrencyInput from "../../components/CurrencyInput";
 import DatePicker from "../../components/DatePicker";
 import CategoryPicker from "../../components/CategoryPicker";
+import { MoneyContext } from "../../contexts/GlobalState";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const initialForm = {
   description: "",
@@ -211,29 +90,38 @@ const initialForm = {
 export default function AddTransactions() {
   const [form, setForm] = useState(initialForm);
   const valueInputRef = useRef();
+  
+  // Consumindo o estado global!
+  const [transactions, setTransactions] = useContext(MoneyContext);
 
-  const addTransaction = () => {
-    Alert.alert(
-      "Dados Prontos!",
-      `${form.description} | ${form.value} | ${form.date.toLocaleDateString()} | ${form.category}`
-    );
+  const setAsyncStorage = async (data) => {
+    try {
+      // O AsyncStorage exige que salvemos objetos/arrays como String
+      await AsyncStorage.setItem("transactions", JSON.stringify(data));
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  const addTransaction = async () => {
+    // Cria a transação gerando um ID baseado no tamanho da lista
+    const newTransaction = { id: transactions.length + 1, ...form };
+    const updatedTransactions = [...transactions, newTransaction];
+
+    setTransactions(updatedTransactions); // Atualiza a memória RAM (Contexto)
+    setForm(initialForm);                 // Limpa o formulário
+    await setAsyncStorage(updatedTransactions); // Atualiza a memória do Celular (Storage)
+
+    Alert.alert("Sucesso!", "Transação adicionada com sucesso!");
   };
 
   return (
-    <KeyboardAvoidingView style={globalStyles.screenContainer} behavior="padding">
+    <KeyboardAvoidingView style={globalStyles.screenContainer}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView style={globalStyles.content}>
           <View style={styles.form}>
-            <DescriptionInput
-              form={form}
-              setForm={setForm}
-              valueInputRef={valueInputRef}
-            />
-            <CurrencyInput
-              form={form}
-              setForm={setForm}
-              valueInputRef={valueInputRef}
-            />
+            <DescriptionInput form={form} setForm={setForm} valueInputRef={valueInputRef} />
+            <CurrencyInput form={form} setForm={setForm} valueInputRef={valueInputRef} />
             <DatePicker form={form} setForm={setForm} />
             <CategoryPicker form={form} setForm={setForm} />
           </View>
@@ -245,16 +133,25 @@ export default function AddTransactions() {
 }
 
 const styles = StyleSheet.create({
-  form: {
-    gap: 12,
-    marginBottom: 40,
-    marginTop: 10,
-  },
+  form: { gap: 12, marginBottom: 40, marginTop: 10 },
 });
 ```
-*Nota Extra: Não se esqueça de ir no arquivo de rotas (`app/(tabs)/_layout.jsx`) e adicionar `tabBarHideOnKeyboard: true` nas opções do seu `<Tabs>` para que a barra de navegação se esconda quando o teclado subir!*
+### 🔍 Passo 5: Testando o Consumo do Contexto
+Para testar se tudo deu certo, vá até a tela inicial (`app/(tabs)/index.jsx`), que será a nossa lista de transações, e puxe o contexto apenas para imprimir a descrição do primeiro item:
 
+```jsx
+import { MoneyContext } from "../../contexts/GlobalState";
+import { useContext } from "react";
+import { Text } from "react-native";
+
+export default function Transactions() {
+  const [transactions] = useContext(MoneyContext);
+
+  // Exibe a descrição do primeiro item da lista (posição 0), se existir (?)
+  return <Text>{transactions[0]?.description}</Text>;
+}
+```
 ✅ **O que alcançamos hoje?**
-Nosso código está limpo, reutilizável e a experiência de preencher o formulário está no padrão de aplicativos profissionais, com gestão inteligente de teclado!
+Seu aplicativo ganhou memória permanente! Agora, você pode adicionar transações, fechar completamente o aplicativo (arrastando para cima no celular) e, ao abrir novamente, as transações ainda estarão lá, sendo lidas direto do armazenamento interno.
 
-**Próximo Passo:** O formulário está pronto, mas o `Alert` não salva nada de verdade. Na próxima aula, vamos implementar o **Context API** para compartilhar os dados entre as abas e o **AsyncStorage** para persistir as informações no banco de dados local do celular.
+**Próximo Passo:** Com os dados garantidos no estado global, nossa próxima missão é transformar aquela aba de Transações em uma linda lista usando a `<FlatList>` do React Native para exibir tudo o que cadastramos!
