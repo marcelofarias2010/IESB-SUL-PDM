@@ -1,106 +1,55 @@
-# 💻 Aula 02: Layout e Estado do Formulário (Adicionar Transações)
+# 💻 Aula 03: Formatação de Moeda, DatePicker e Dropdown Nativo
 
-Dando continuidade ao nosso aplicativo **Money**, nesta aula vamos focar na aba do meio: a tela de **Adicionar Transações**. O objetivo aqui é desenhar a interface, criar inputs para os dados e conectar tudo isso a um estado (`useState`) inteligente para gerenciar o formulário.
+O nosso formulário de "Adicionar Transação" está ganhando vida! Na aula passada, conectamos todos os campos a um estado centralizado. Hoje, vamos transformar os inputs simples de Data e Categoria em componentes nativos e criar uma máscara de dinheiro real para o campo de Valor.
 
 ## 🎯 Objetivos da Aula
-* Adicionar o ícone do aplicativo no `app.json`.
-* Criar a estrutura base da tela de Adicionar Transações (Inputs e Botão).
-* Criar um arquivo de estilos globais (`GlobalStyles.js`) para reaproveitamento de código.
-* Componentizar o botão principal da aplicação.
-* Gerenciar o estado de múltiplos inputs usando um único `useState` contendo um objeto.
+* Criar uma máscara de formatação para R$ (Reais) usando Regex.
+* Instalar e configurar a biblioteca `@react-native-community/datetimepicker` para seleção de datas.
+* Instalar e configurar a biblioteca `@react-native-picker/picker` para o dropdown de categorias.
+* Transformar objetos de Data em Strings legíveis para o usuário (`pt-BR`).
 
-## 📱 Passo 1: Configurando o Ícone do App
-Antes de codar a tela, vamos deixar nosso app com cara de app profissional! 
-Abra o arquivo `app.json` (na raiz do projeto) e localize as configurações de ícone e splash screen. Substitua os caminhos pelas imagens que você disponibilizou na pasta de `assets`:
+## 💰 Passo 1: Máscara de Dinheiro (Currency Input)
+Queremos que o usuário digite números e veja a formatação "R$ 10.000,00" na tela, mas queremos salvar no estado apenas o número `10000.00` para facilitar os cálculos depois.
 
-```json
-{
-  "expo": {
-    "icon": "./assets/images/icon.png",
-    "splash": {
-      "image": "./assets/images/splash.png"
-    }
-  }
-}
+Para isso, vamos criar uma função `handleCurrencyChange`:
+
+```javascript
+const handleCurrencyChange = (text) => {
+  // 1. Regex Mágico: Remove tudo o que NÃO for número (letras, R$, vírgulas)
+  const formattedValue = text.replace(/\D/g, "");
+
+  // 2. Transforma em número decimal (divide por 100 para criar os centavos)
+  const numberValue = formattedValue ? parseFloat(formattedValue) / 100 : 0;
+
+  // 3. Salva no estado
+  setForm({ ...form, value: numberValue });
+};
 ```
-*Atenção: Para que o ícone atualize no Expo Go, geralmente é necessário parar o servidor no terminal (`Ctrl+C`) e rodar novamente (`npm run android`).*
 
-## 🏗️ Passo 2: Estrutura Base e Estilos Globais
-Na tela `AddTransactions.jsx`, vamos precisar de quatro campos: Descrição, Valor, Data e Categoria. Para que as telas fiquem padronizadas, vamos criar uma pasta `styles/` na raiz e dentro dela o arquivo `globalStyles.js`.
+## 📅 Passo 2: O DatePicker Nativo
+No React Native, não existe um input `<input type="date">` como na Web. Precisamos usar a biblioteca da comunidade para chamar o calendário nativo do Android ou a roleta do iOS.
 
-Criando o `globalStyles.js`:
+1. **Instalação:** Pare o servidor e rode no terminal:
+```bash
+npx expo install @react-native-community/datetimepicker
+```
+2. **Estado de Controle:** Precisamos de um `useState` para saber se o calendário está aberto: `const [showPicker, setShowPicker] = useState(false)`;
+3. **Botão Falso:** O input de data não será mais editável. Colocaremos ele dentro de um `TouchableOpacity` que muda o `showPicker` para `true`.
+4. **Tratando Plataformas:** Vamos usar o `Platform.OS === "ios" ? "inline" : "default"` para garantir que o componente se comporte bem em ambos os sistemas.
+
+## 🗂️ Passo 3: Dropdown de Categorias (Picker)
+Para a Categoria, não queremos que o usuário digite, queremos que ele escolha de uma lista fixa.
+
+1. **Instalação:** Rode no terminal:
+```bash
+npx expo install @react-native-picker/picker
+```
+2. **Dicionário de Categorias:** Lembre-se de usar o objeto exportado do arquivo `constants/categories.js`.
+3. **Estilização:** O Picker nativo deve ser envolvido em uma `<View>` com bordas para ficar parecido com os outros inputs.
+
+## 🧩 Passo 4: Juntando Tudo (Código Final da Tela)
+Aqui está o código completo do nosso arquivo `AddTransactions.jsx` com todas as funcionalidades integradas:
 ```js
-import { StyleSheet } from "react-native"
-import { colors } from "../constants/colors"
-
-export const globalStyles = StyleSheet.create({
-  screenContainer: {
-    display: "flex",
-    flex: 1
-  },
-  content: {
-    gap: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 20
-  },
-  input: {
-    height: 40,
-    paddingHorizontal: 16,
-    borderColor: colors.secondaryText,
-    borderWidth: 1,
-    borderRadius: 8,
-    flexGrow: 1
-  },
-  inputLabel: {
-    fontSize: 16,
-    color: colors.primaryText,
-    marginBottom: 4
-  }
-})
-```
-**Por que usar `padding` na ScrollView?**
-Ao invés de usar `margin`, usamos `paddingHorizontal` na nossa `<ScrollView>`. Se usássemos margem, a barra de rolagem visual do celular ficaria "descolada" da borda da tela. O `padding` garante que o conteúdo afaste, mas a barra de rolagem continue encostada no canto!
-
-## 🔘 Passo 3: Componentizando o Botão
-Em vez de criar um botão do zero em cada tela, vamos criar um componente reutilizável.
-Crie o arquivo `components/Button.jsx`:
-
-```jsx
-import { StyleSheet, Text } from "react-native";
-import { TouchableHighlight } from "react-native";
-import { colors } from "../constants/colors";
-
-export default function Button({ children, onPress }) {
-  return (
-    <TouchableHighlight style={style.background} onPress={onPress}>
-      <Text style={style.text}>{children}</Text>
-    </TouchableHighlight>
-  );
-}
-
-const style = StyleSheet.create({
-  background: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    height: 44,
-    borderRadius: 8,
-    backgroundColor: colors.primary,
-  },
-  text: {
-    color: colors.primaryContrast,
-    fontSize: 18,
-    fontWeight: 600,
-  },
-});
-
-```
-## 🧠 Passo 4: O Estado Centralizado (O pulo do gato!)
-Geralmente, criamos um `useState` para cada input (`const [descricao, setDescricao] = useState('')`). Mas como temos 4 campos, isso pode ficar confuso. Vamos aprender uma técnica avançada: um único estado com um objeto dentro!
-
-No arquivo `AddTransactions.jsx`:
-
-```jsx
 import {
   Text,
   View,
@@ -109,29 +58,52 @@ import {
   Alert,
   StyleSheet,
   Button,
+  TouchableOpacity,
+  Platform,
 } from "react-native";
 import { globalStyles } from "../../styles/globalStyles";
 import { useState } from "react";
+import RNDateTimePicker from "@react-native-community/datetimepicker";
+import { Picker } from "@react-native-picker/picker";
+import { categories } from "../../constants/categories";
+import { colors } from "../../constants/colors";
+
 export default function AddTransactions() {
   const initialForm = {
     description: "",
     value: 0,
-    date: "",
+    date: new Date(),
     category: "Renda",
   };
 
   const [form, setForm] = useState(initialForm);
+  const [showPicker, setShowPicker] = useState(false);
 
   const addTransaction = () => {
     Alert.alert(
-      `${form.description} | ${form.value} | ${form.date} | ${form.category}`,
+      `${form.description} | ${form.value} | ${form.date} | ${form.category}`
     );
+  };
+
+  const handleCurrencyChange = (text) => {
+    const formattedValue = text.replace(/\D/g, "");
+    const numberValue = formattedValue ? parseFloat(formattedValue) / 100 : 0;
+
+    setForm({ ...form, value: numberValue });
+  };
+
+  const handleDateChange = (_, selectDate) => {
+    setShowPicker(false);
+
+    if (selectDate) {
+      setForm({ ...form, date: selectDate });
+    }
   };
 
   return (
     <View style={globalStyles.screenContainer}>
       <ScrollView style={globalStyles.content}>
-        <View style={StyleSheet.form}>
+        <View style={styles.form}>
           <View>
             <Text style={globalStyles.inputLabel}>Descrição</Text>
             <TextInput
@@ -144,8 +116,11 @@ export default function AddTransactions() {
           <View>
             <Text style={globalStyles.inputLabel}>Valor</Text>
             <TextInput
-              value={form.value}
-              onChangeText={(text) => setForm({ ...form, value: text })}
+              value={form.value.toLocaleString("pt-BR", {
+                style: "currency",
+                currency: "BRL",
+              })}
+              onChangeText={handleCurrencyChange}
               keyboardType="numeric"
               style={globalStyles.input}
             />
@@ -153,20 +128,56 @@ export default function AddTransactions() {
 
           <View>
             <Text style={globalStyles.inputLabel}>Data</Text>
-            <TextInput
-              value={form.date}
-              onChangeText={(text) => setForm({ ...form, date: text })}
-              style={globalStyles.input}
-            />
+            <TouchableOpacity onPress={() => setShowPicker(true)}>
+              <TextInput
+                value={form.date.toLocaleDateString("pt-BR")}
+                onChangeText={(text) => setForm({ ...form, date: text })}
+                style={globalStyles.input}
+                editable={false}
+              />
+            </TouchableOpacity>
+
+            {showPicker && (
+              <RNDateTimePicker
+                mode="date"
+                display={Platform.OS === "ios" ? "inline" : "default"}
+                value={form.date}
+                onChange={handleDateChange}
+              />
+            )}
           </View>
 
           <View>
             <Text style={globalStyles.inputLabel}>Categoria</Text>
-            <TextInput
-              value={form.category}
-              onChangeText={(text) => setForm({ ...form, category: text })}
-              style={globalStyles.input}
-            />
+            <View style={styles.picker}>
+              <Picker
+                selectedValue={form.category}
+                onValueChange={(itemValue) =>
+                  setForm({ ...form, category: itemValue })
+                }
+              >
+                <Picker.Item
+                  label={categories.income.displayName}
+                  value={categories.income.name}
+                />
+                <Picker.Item
+                  label={categories.food.displayName}
+                  value={categories.food.name}
+                />
+                <Picker.Item
+                  label={categories.house.displayName}
+                  value={categories.house.name}
+                />
+                <Picker.Item
+                  label={categories.education.displayName}
+                  value={categories.education.name}
+                />
+                <Picker.Item
+                  label={categories.travel.displayName}
+                  value={categories.travel.name}
+                />
+              </Picker>
+            </View>
           </View>
         </View>
 
@@ -176,8 +187,24 @@ export default function AddTransactions() {
   );
 }
 
+const styles = StyleSheet.create({
+  form: {
+    gap: 12,
+    marginBottom: 40,
+    marginTop: 10,
+  },
+  picker: {
+    display: "flex",
+    justifyContent: "center",
+    height: 44,
+    borderColor: colors.secondaryText,
+    borderWidth: 1,
+    borderRadius: 8,
+    flexGrow: 1,
+  },
+});
 ```
 ✅ **O que alcançamos hoje?**
-Nossa tela de adição já tem cara de formulário real! Aprendemos a criar estilos globais para padronizar o app, criamos um botão customizado e, o mais importante, aprendemos a gerenciar um formulário inteiro usando um único estado do React.
+Nosso formulário agora é 100% à prova de falhas de digitação do usuário! Temos máscaras, seletores nativos de data perfeitamente configurados para iOS e Android, e um dropdown restritivo.
 
-**Próximo Passo:** Por enquanto, Data e Categoria são apenas campos de texto normais. Na próxima aula, vamos evoluir isso introduzindo um **DatePicker** e um **Dropdown** de verdade!
+**Próximo Passo:** Na próxima aula, faremos um polimento final no formulário, resolvendo aquele problema chato do teclado do celular empurrando a Tab Bar (menu inferior) para cima enquanto digitamos!
