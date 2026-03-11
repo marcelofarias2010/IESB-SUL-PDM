@@ -7,6 +7,7 @@ export default function GlobalState({ children }) {
   const [transactions, setTransactions] = useState([])
 
   useEffect(() => {
+    // AsyncStorage.clear()
     const getAsyncStorage = async () => {
       try {
         const storedTransactions = await AsyncStorage.getItem("transactions")

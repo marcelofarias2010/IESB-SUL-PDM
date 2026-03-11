@@ -1,172 +1,183 @@
-# 💻 Aula 05: Estado Global e Persistência de Dados (Context API e AsyncStorage)
+# 💻 Aula 06: Listagem de Transações (FlatList e Estilização Dinâmica)
 
-Até agora, conseguimos preencher o formulário perfeitamente, mas os dados estão presos na tela de "Adicionar" e somem assim que o aplicativo é reiniciado. Nesta aula, vamos resolver esses dois problemas usando a **Context API** do React (para compartilhar dados entre todas as abas) e o **AsyncStorage** (para salvar na memória do celular).
-
-
+Até agora, nosso aplicativo salva as transações na memória de forma invisível. Nesta aula, vamos dar vida à aba principal do aplicativo, criando uma lista elegante para exibir todas as movimentações financeiras. Aprenderemos a formatar dados na tela, criar estilos condicionais (renda verde, gastos vermelhos) e lidar com listas vazias.
 
 ## 🎯 Objetivos da Aula
-* Entender por que precisamos de um estado global (evitar *Prop Drilling*).
-* Criar um contexto usando `createContext` e `Provider`.
-* Envolver a aplicação com o Estado Global no Root Layout.
-* Instalar e usar o `@react-native-async-storage/async-storage`.
-* Salvar e recuperar dados do armazenamento local.
+* Utilizar o componente `<FlatList>` para renderizar listas otimizadas.
+* Criar um componente isolado para o item da lista (`TransactionItem`).
+* Criar um componente dinâmico de ícones (`CategoryItem`) baseado na categoria.
+* Aplicar estilização condicional (cores diferentes dependendo do tipo de transação).
+* Formatar datas e valores monetários para o padrão brasileiro (`pt-BR`).
+* Usar a propriedade `ListEmptyComponent` da FlatList.
 
 ---
 
-## 🌐 Passo 1: Criando o Estado Global (Context API)
-Como nossas três telas precisam ver a mesma lista de transações, precisamos de um "guarda-chuva" que segure esses dados para toda a aplicação.
-
-Crie uma pasta chamada `contexts` na raiz do projeto e adicione o arquivo `GlobalState.jsx`. Nele, vamos criar nosso contexto e também já deixar preparado o código que vai buscar as informações salvas no celular ao abrir o app:
+## 🎨 Passo 1: Atualizando os Estilos Globais
+Antes de construir os componentes, precisamos de novas cores e padrões de texto no nosso arquivo `styles/globalStyles.js`. Adicione as classes de linhas e textos primários/secundários:
 
 ```javascript
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createContext, useEffect, useState } from "react";
-
-// 1. Criando o contexto
-export const MoneyContext = createContext();
-
-export default function GlobalState({ children }) {
-  const [transactions, setTransactions] = useState([]);
-
-  // Busca os dados no celular assim que o componente é montado
-  useEffect(() => {
-    const getAsyncStorage = async () => {
-      try {
-        const storedTransactions = await AsyncStorage.getItem("transactions");
-        if (storedTransactions) {
-          // AsyncStorage só guarda Textos (Strings).
-           setTransactions(JSON.parse(storedTransactions))
-        }
-      } catch (e) {
-        console.log(e)
-      }
-    }
-    getAsyncStorage()
-  }, [])
-
-  return (
-    <MoneyContext.Provider value={[transactions, setTransactions]}>
-      {children}
-    </MoneyContext.Provider>
-  )
-}
-```
-### ☂️ Passo 2: Envolvendo a Aplicação com o Contexto
-Para que o `MoneyContext` funcione, ele precisa abraçar toda a nossa árvore de navegação. Abra o arquivo `app/_layout.jsx` (ou `RootLayout`) e envolva o `<Stack>` com o seu novo `GlobalState`:
-
+// Adicione isto ao seu StyleSheet.create no globalStyles.js
+  line: {
+    backgroundColor: colors.secondaryText,
+    height: 1,
+    opacity: 0.5,
+    marginBottom: 4
+  },
+  primaryText: {
+    fontSize: 16,
+    color: colors.primaryText
+  },
+  secondaryText: {
+    fontSize: 12,
+    color: colors.secondaryText
+  },
+  positiveText: {
+    fontSize: 16,
+    color: colors.positiveText // Verde
+  },
+  negativeText: {
+    fontSize: 16,
+    color: colors.negativesText // Vermelho
+  },
+  ```
+ ## 🔣 Passo 2: O Ícone Dinâmico (CategoryItem)
+Cada transação terá um ícone redondo do lado esquerdo. A cor e o desenho do ícone mudam dependendo da categoria (Alimentação, Casa, etc.).
+Crie o arquivo `components/CategoryItem.jsx`:
 ```jsx
-import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
+import { View, StyleSheet } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+import { categories } from "../constants/categories";
 import { colors } from "../constants/colors";
-import GlobalState from "../contexts/GlobalState";
 
-export default function RootLayout() {
-  return (
-    // Agora todas as telas dentro do Stack tem acesso ao Contexto!
-    <GlobalState>
-      <StatusBar backgroundColor={colors.primary} style="light" />
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-    </GlobalState>
-  );
-}
-```
-### 💾 Passo 3: Instalando o AsyncStorage
-Pare o servidor no seu terminal (`Ctrl+C`) e instale a biblioteca de armazenamento local do React Native:
-```bash
-npx expo install @react-native-async-storage/async-storage
-```
-*Depois de instalar, rode `npm run android` novamente.*
-
-### ➕ Passo 4: Salvando Transações de Verdade
-Agora vamos atualizar nossa tela de formulário (`app/(tabs)/add-transactions.jsx`). Em vez de apenas dar um `Alert`, vamos puxar as transações do contexto, adicionar a nova, atualizar o contexto e salvar no `AsyncStorage`.
-
-```jsx
-import { View, ScrollView, Alert, StyleSheet, KeyboardAvoidingView, Keyboard, TouchableWithoutFeedback } from "react-native";
-import { globalStyles } from "../../styles/globalStyles";
-import Button from "../../components/Button";
-import { useContext, useRef, useState } from "react";
-import DescriptionInput from "../../components/DescriptionInput";
-import CurrencyInput from "../../components/CurrencyInput";
-import DatePicker from "../../components/DatePicker";
-import CategoryPicker from "../../components/CategoryPicker";
-import { MoneyContext } from "../../contexts/GlobalState";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
-const initialForm = {
-  description: "",
-  value: 0,
-  date: new Date(),
-  category: "Renda",
-};
-
-export default function AddTransactions() {
-  const [form, setForm] = useState(initialForm);
-  const valueInputRef = useRef();
-  
-  // Consumindo o estado global!
-  const [transactions, setTransactions] = useContext(MoneyContext);
-
-  const setAsyncStorage = async (data) => {
-    try {
-      // O AsyncStorage exige que salvemos objetos/arrays como String
-      await AsyncStorage.setItem("transactions", JSON.stringify(data));
-    } catch (e) {
-      console.log(e);
-    }
-  };
-
-  const addTransaction = async () => {
-    // Cria a transação gerando um ID baseado no tamanho da lista
-    const newTransaction = { id: transactions.length + 1, ...form };
-    const updatedTransactions = [...transactions, newTransaction];
-
-    setTransactions(updatedTransactions); // Atualiza a memória RAM (Contexto)
-    setForm(initialForm);                 // Limpa o formulário
-    await setAsyncStorage(updatedTransactions); // Atualiza a memória do Celular (Storage)
-
-    Alert.alert("Sucesso!", "Transação adicionada com sucesso!");
-  };
+export default function CategoryItem({ category }) {
+  // Acessa as configurações da categoria (ex: categories["food"])
+  const currentCategory = categories[category];
 
   return (
-    <KeyboardAvoidingView style={globalStyles.screenContainer}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <ScrollView style={globalStyles.content}>
-          <View style={styles.form}>
-            <DescriptionInput form={form} setForm={setForm} valueInputRef={valueInputRef} />
-            <CurrencyInput form={form} setForm={setForm} valueInputRef={valueInputRef} />
-            <DatePicker form={form} setForm={setForm} />
-            <CategoryPicker form={form} setForm={setForm} />
-          </View>
-          <Button onPress={addTransaction}>Adicionar</Button>
-        </ScrollView>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+    <View style={[styles.background, { backgroundColor: currentCategory.background }]}>
+      <MaterialIcons name={currentCategory.icon} size={24} color={colors.primaryContrast} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  form: { gap: 12, marginBottom: 40, marginTop: 10 },
+  background: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  }
 });
 ```
-### 🔍 Passo 5: Testando o Consumo do Contexto
-Para testar se tudo deu certo, vá até a tela inicial (`app/(tabs)/index.jsx`), que será a nossa lista de transações, e puxe o contexto apenas para imprimir a descrição do primeiro item:
+## 💳 Passo 3: O Item da Transação (`TransactionItem`)
+Agora vamos montar a "linha" completa da transação, exibindo o ícone, a descrição, a data e o valor formatado. Note a lógica condicional (`valueStyle`) que decide se o texto do dinheiro será verde (renda) ou vermelho (gasto).
+
+Crie o arquivo `components/TransactionItem.jsx`:
+
+```jsx
+import { StyleSheet, Text, View } from "react-native";
+import { globalStyles } from "../styles/globalStyles";
+import CategoryItem from "./CategoryItem";
+import { categories } from "../constants/categories";
+
+export default function TransactionItem({ category, date, description, value }) {
+  // Define a cor do texto do valor com base na categoria
+  const valueStyle = category === categories.income.name
+      ? globalStyles.positiveText
+      : globalStyles.negativeText;
+
+  return (
+    <>
+      <View style={styles.itemContainer}>
+        <CategoryItem category={category} />
+        
+        <View style={styles.textContainer}>
+          {/* Data formatada para pt-BR */}
+          <Text style={globalStyles.secondaryText}>
+            {new Date(date).toLocaleDateString("pt-BR")}
+          </Text>
+          
+          <View style={styles.bottomLineContainer}>
+            <Text style={globalStyles.primaryText}>{description}</Text>
+            
+            {/* Valor formatado como Moeda */}
+            <Text style={valueStyle}>
+              {value.toLocaleString("pt-BR", {
+                style: "currency",
+                currency: "BRL",
+              })}
+            </Text>
+          </View>
+        </View>
+      </View>
+      {/* Linha divisória entre os itens */}
+      <View style={globalStyles.line} />
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  itemContainer: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingBottom: 4,
+  },
+  textContainer: {
+    display: "flex",
+    flex: 1,
+    flexDirection: "column",
+    marginLeft: 12,
+    paddingVertical: 8,
+  },
+  bottomLineContainer: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+});
+```
+## 📋 Passo 4: A Tela Principal com FlatList
+Finalmente, vamos até a nossa tela inicial (`app/(tabs)/index.jsx`) buscar os dados do nosso `MoneyContext` e passá-los para a `FlatList`.
+
+**Por que a FlatList é incrível?** Ela possui a propriedade `ListEmptyComponent`, que permite exibir um texto amigável (ex: "Ainda não há nenhum item!") caso o usuário tenha acabado de instalar o aplicativo e a lista esteja vazia.
 
 ```jsx
 import { MoneyContext } from "../../contexts/GlobalState";
 import { useContext } from "react";
-import { Text } from "react-native";
+import { FlatList, Text, View } from "react-native";
+import TransactionItem from "../../components/TransactionItem";
+import { globalStyles } from "../../styles/globalStyles";
 
 export default function Transactions() {
   const [transactions] = useContext(MoneyContext);
 
-  // Exibe a descrição do primeiro item da lista (posição 0), se existir (?)
-  return <Text>{transactions[0]?.description}</Text>;
+  return (
+    <View style={globalStyles.screenContainer}>
+      <FlatList
+        data={transactions}
+        // Desestrutura o item atual e passa todas as suas propriedades para o TransactionItem
+        renderItem={({ item }) => <TransactionItem {...item} />}
+        keyExtractor={(item, index) => index.toString()} // Importante para evitar avisos no console
+        
+        // Componente exibido quando o array de dados está vazio
+        ListEmptyComponent={
+          <Text style={globalStyles.secondaryText}>
+            Ainda não há nenhum item!
+          </Text>
+        }
+        style={globalStyles.content}
+      />
+    </View>
+  );
 }
 ```
-✅ **O que alcançamos hoje?**
-Seu aplicativo ganhou memória permanente! Agora, você pode adicionar transações, fechar completamente o aplicativo (arrastando para cima no celular) e, ao abrir novamente, as transações ainda estarão lá, sendo lidas direto do armazenamento interno.
+💡 **Dica de Debug (Limpando o AsyncStorage)**
+Se você adicionou dados incorretos no passado (por exemplo, quando a data estava salva como texto simples em vez de objeto) e o aplicativo estiver fechando sozinho (`Crash`) ao tentar carregar a lista, você precisará limpar a memória do celular.
+Basta ir no seu `GlobalState.jsx` e colocar um `AsyncStorage.clear()` temporariamente dentro do seu `useEffect`, rodar o app uma vez e depois retirar o comando.
 
-**Próximo Passo:** Com os dados garantidos no estado global, nossa próxima missão é transformar aquela aba de Transações em uma linda lista usando a `<FlatList>` do React Native para exibir tudo o que cadastramos!
+✅ **O que alcançamos hoje?**
+Sua aba principal agora parece um aplicativo de banco profissional! As listas são renderizadas eficientemente, com formatação de moeda perfeita, formatação de datas nativa e cores condicionais para orientar visualmente o usuário sobre ganhos e despesas.
+
+**Próximo Passo:** Na próxima (e última) grande aula, vamos fechar com chave de ouro criando a **Aba de Resumo**, agrupando esses dados matematicamente para gerar estatísticas!

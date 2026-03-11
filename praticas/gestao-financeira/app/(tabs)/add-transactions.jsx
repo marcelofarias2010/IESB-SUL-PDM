@@ -14,14 +14,15 @@ import DescriptionInput from "../../components/DescriptionInput";
 import CurrencyInput from "../../components/CurrencyInput";
 import DatePicker from "../../components/DatePicker";
 import CategoryPicker from "../../components/CategoryPicker";
-import { MoneyContext } from "../../contexts/GlobalState"
-import AsyncStorage from "@react-native-async-storage/async-storage"
+import { MoneyContext } from "../../contexts/GlobalState";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { categories } from "../../constants/categories";
 
 const initialForm = {
   description: "",
   value: 0,
   date: new Date(),
-  category: "Renda",
+  category: categories.income.name,
 };
 
 export default function AddTransactions() {
@@ -58,7 +59,11 @@ export default function AddTransactions() {
               setForm={setForm}
               valueInputRef={valueInputRef}
             />
-            <CurrencyInput form={form} setForm={setForm} valueInputRef={valueInputRef} />
+            <CurrencyInput
+              form={form}
+              setForm={setForm}
+              valueInputRef={valueInputRef}
+            />
             <DatePicker form={form} setForm={setForm} />
             <CategoryPicker form={form} setForm={setForm} />
           </View>
