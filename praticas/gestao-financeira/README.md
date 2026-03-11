@@ -35,6 +35,21 @@ export default function GlobalState({ children }) {
         const storedTransactions = await AsyncStorage.getItem("transactions");
         if (storedTransactions) {
           // AsyncStorage só guarda Textos (Strings).
+           setTransactions(JSON.parse(storedTransactions))
+        }
+      } catch (e) {
+        console.log(e)
+      }
+    }
+    getAsyncStorage()
+  }, [])
+
+  return (
+    <MoneyContext.Provider value={[transactions, setTransactions]}>
+      {children}
+    </MoneyContext.Provider>
+  )
+}
 ```
 ### ☂️ Passo 2: Envolvendo a Aplicação com o Contexto
 Para que o `MoneyContext` funcione, ele precisa abraçar toda a nossa árvore de navegação. Abra o arquivo `app/_layout.jsx` (ou `RootLayout`) e envolva o `<Stack>` com o seu novo `GlobalState`:
