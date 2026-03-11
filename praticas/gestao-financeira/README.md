@@ -30,34 +30,33 @@ Na tela `AddTransactions.jsx`, vamos precisar de quatro campos: Descrição, Val
 
 Criando o `globalStyles.js`:
 ```js
-import { StyleSheet } from 'react-native';
-import { Colors } from '../constants/colors'; // Ajuste o caminho conforme seu projeto
+import { StyleSheet } from "react-native"
+import { colors } from "../constants/colors"
 
 export const globalStyles = StyleSheet.create({
   screenContainer: {
-    flex: 1,
-    backgroundColor: Colors.background,
+    display: "flex",
+    flex: 1
   },
   content: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
     gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 20
   },
   input: {
     height: 40,
+    paddingHorizontal: 16,
+    borderColor: colors.secondaryText,
     borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: 8,
-    paddingHorizontal: 10,
-    backgroundColor: Colors.white,
+    flexGrow: 1
   },
   inputLabel: {
-    fontSize: 14,
-    color: Colors.text,
-    marginBottom: 4,
-    fontWeight: 'bold',
+    fontSize: 16,
+    color: colors.primaryText,
+    marginBottom: 4
   }
-});
+})
 ```
 **Por que usar `padding` na ScrollView?**
 Ao invés de usar `margin`, usamos `paddingHorizontal` na nossa `<ScrollView>`. Se usássemos margem, a barra de rolagem visual do celular ficaria "descolada" da borda da tela. O `padding` garante que o conteúdo afaste, mas a barra de rolagem continue encostada no canto!
@@ -66,32 +65,35 @@ Ao invés de usar `margin`, usamos `paddingHorizontal` na nossa `<ScrollView>`. 
 Em vez de criar um botão do zero em cada tela, vamos criar um componente reutilizável.
 Crie o arquivo `components/Button.jsx`:
 
-```javascript
-import { TouchableHighlight, Text, StyleSheet } from 'react-native';
-import { Colors } from '../constants/colors';
+```jsx
+import { StyleSheet, Text } from "react-native";
+import { TouchableHighlight } from "react-native";
+import { colors } from "../constants/colors";
 
 export default function Button({ children, onPress }) {
   return (
-    <TouchableHighlight style={styles.button} onPress={onPress} underlayColor={Colors.primaryDark}>
-      <Text style={styles.text}>{children}</Text>
+    <TouchableHighlight style={style.background} onPress={onPress}>
+      <Text style={style.text}>{children}</Text>
     </TouchableHighlight>
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    backgroundColor: Colors.primary,
-    height: 50,
+const style = StyleSheet.create({
+  background: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    height: 44,
     borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: colors.primary,
   },
   text: {
-    color: Colors.white,
-    fontSize: 16,
-    fontWeight: 'bold',
-  }
+    color: colors.primaryContrast,
+    fontSize: 18,
+    fontWeight: 600,
+  },
 });
+
 ```
 ## 🧠 Passo 4: O Estado Centralizado (O pulo do gato!)
 Geralmente, criamos um `useState` para cada input (`const [descricao, setDescricao] = useState('')`). Mas como temos 4 campos, isso pode ficar confuso. Vamos aprender uma técnica avançada: um único estado com um objeto dentro!
@@ -99,58 +101,81 @@ Geralmente, criamos um `useState` para cada input (`const [descricao, setDescric
 No arquivo `AddTransactions.jsx`:
 
 ```jsx
-import { useState } from 'react';
-import { View, Text, TextInput, ScrollView, Alert } from 'react-native';
-import Button from '../components/Button';
-import { globalStyles } from '../styles/globalStyles';
-
+import {
+  Text,
+  View,
+  ScrollView,
+  TextInput,
+  Alert,
+  StyleSheet,
+  Button,
+} from "react-native";
+import { globalStyles } from "../../styles/globalStyles";
+import { useState } from "react";
 export default function AddTransactions() {
-  // Estado inicial como um objeto
-  const [form, setForm] = useState({
-    description: '',
-    value: '',
-    date: '',
-    category: 'Renda'
-  });
+  const initialForm = {
+    description: "",
+    value: 0,
+    date: "",
+    category: "Renda",
+  };
 
-  const handleAddTransaction = () => {
-    Alert.alert("Dados Salvos!", `Desc: ${form.description} \nValor: ${form.value}`);
+  const [form, setForm] = useState(initialForm);
+
+  const addTransaction = () => {
+    Alert.alert(
+      `${form.description} | ${form.value} | ${form.date} | ${form.category}`,
+    );
   };
 
   return (
-    <ScrollView style={globalStyles.screenContainer} contentContainerStyle={globalStyles.content}>
-      
-      {/* Campo Descrição */}
-      <View>
-        <Text style={globalStyles.inputLabel}>Descrição</Text>
-        <TextInput 
-          style={globalStyles.input}
-          value={form.description}
-          // Usamos o Spread Operator (...) para copiar o form antigo e alterar só a description!
-          onChangeText={(text) => setForm({ ...form, description: text })}
-        />
-      </View>
+    <View style={globalStyles.screenContainer}>
+      <ScrollView style={globalStyles.content}>
+        <View style={StyleSheet.form}>
+          <View>
+            <Text style={globalStyles.inputLabel}>Descrição</Text>
+            <TextInput
+              value={form.description}
+              onChangeText={(text) => setForm({ ...form, description: text })}
+              style={globalStyles.input}
+            />
+          </View>
 
-      {/* Campo Valor */}
-      <View>
-        <Text style={globalStyles.inputLabel}>Valor</Text>
-        <TextInput 
-          style={globalStyles.input}
-          keyboardType="numeric" // Teclado de números!
-          value={form.value}
-          onChangeText={(text) => setForm({ ...form, value: text })}
-        />
-      </View>
+          <View>
+            <Text style={globalStyles.inputLabel}>Valor</Text>
+            <TextInput
+              value={form.value}
+              onChangeText={(text) => setForm({ ...form, value: text })}
+              keyboardType="numeric"
+              style={globalStyles.input}
+            />
+          </View>
 
-      {/* Adicione os campos Data e Categoria de forma similar... */}
+          <View>
+            <Text style={globalStyles.inputLabel}>Data</Text>
+            <TextInput
+              value={form.date}
+              onChangeText={(text) => setForm({ ...form, date: text })}
+              style={globalStyles.input}
+            />
+          </View>
 
-      <View style={{ marginTop: 30 }}>
-        <Button title="Adicionar" onPress={handleAddTransaction} />
-      </View>
+          <View>
+            <Text style={globalStyles.inputLabel}>Categoria</Text>
+            <TextInput
+              value={form.category}
+              onChangeText={(text) => setForm({ ...form, category: text })}
+              style={globalStyles.input}
+            />
+          </View>
+        </View>
 
-    </ScrollView>
+        <Button title="Adicionar" onPress={addTransaction} />
+      </ScrollView>
+    </View>
   );
 }
+
 ```
 ✅ **O que alcançamos hoje?**
 Nossa tela de adição já tem cara de formulário real! Aprendemos a criar estilos globais para padronizar o app, criamos um botão customizado e, o mais importante, aprendemos a gerenciar um formulário inteiro usando um único estado do React.
