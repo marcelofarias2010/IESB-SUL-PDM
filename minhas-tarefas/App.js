@@ -7,11 +7,7 @@ import { btn_cadastro_meta, rotulo_input_meta, rotulo_lista_meta } from './mensa
 export default function App() {
   return (
     <View style={styles.mainContainer}>
-      <TextInput placeholder={rotulo_input_meta}></TextInput>
-      <Text>{rotulo_lista_meta}</Text>
-      <Button title={btn_cadastro_meta}></Button>
-      <Image source={require('./assets/OIP.webp')}></Image>
-      <StatusBar style="auto" />
+      <Text>Ola Mundo!</Text>
     </View>
   );
 }
