@@ -105,10 +105,11 @@ Quando o build terminar (mensagem de *Build Finished*), o terminal exibirá um *
 
 ## 📚 Referências de Estudo
 Caso queira se aprofundar nos tipos de build do EAS, consulte a documentação oficial:
-- Configurando Builds de Desenvolvimento
-- Development Build para Android
-- Development Build para iOS (Dispositivos Físicos)
-- Builds de Distribuição Interna (O arquivo .apk / .tar.gz)
+
+* [Configurando Builds de Desenvolvimento](https://docs.expo.dev/tutorial/eas/configure-development-build/)
+* [Development Build para Android](https://docs.expo.dev/tutorial/eas/android-development-build/)
+* [Development Build para iOS (Dispositivos Físicos)](https://docs.expo.dev/tutorial/eas/ios-development-build-for-devices/)
+* [Builds de Distribuição Interna (O arquivo .apk / .tar.gz)](https://docs.expo.dev/tutorial/eas/internal-distribution-builds/)
 
 ✅ **Conclusão do Módulo**
 Parabéns! 🎉 Você concluiu a jornada de desenvolvimento mobile! Criamos um projeto do zero, estruturamos telas, estilizamos, manipulamos estados globais, salvamos dados na memória do aparelho e, finalmente, geramos um aplicativo instalável.
