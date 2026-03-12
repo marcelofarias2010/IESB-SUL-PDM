@@ -1,97 +1,44 @@
-# 💻 Aula 08: Gerando o Aplicativo Final (Build com EAS) e Distribuição
+# 💻 Aula 09: Conclusão e Próximos Passos no React Native
 
-Até o momento, nosso aplicativo só funciona se o nosso computador estiver ligado, com o terminal rodando e conectados pelo Expo Go. Mas como fazemos para gerar o arquivo final do aplicativo e enviar para outras pessoas instalarem? 
+Parabéns! 🎉 Você chegou ao final do projeto e concluiu o desenvolvimento do aplicativo **Money**. Nós saímos do zero, entendemos os fundamentos do React Native com Expo, criamos interfaces responsivas, gerenciamos estados globais e até geramos um aplicativo instalável. 
 
-Nesta aula, vamos usar o **EAS (Expo Application Services)** para compilar nosso código nas nuvens e gerar um arquivo instalável (`.apk`) para Android!
+Mas lembre-se: nenhum curso te leva do "zero ao Sênior" magicamente. A base você já tem, agora é hora de praticar e voar mais alto! Abaixo, listamos os próximos passos recomendados para a sua jornada como pessoa desenvolvedora mobile.
 
-## 🎯 Objetivos da Aula
-* Entender a diferença entre *Development Build*, *Internal Distribution* e *Production Build*.
-* Criar uma conta gratuita no portal da Expo.
-* Instalar e configurar o `eas-cli` no projeto.
-* Configurar o arquivo `eas.json` para gerar um arquivo APK.
-* Realizar o build do aplicativo na nuvem.
-* Baixar, instalar e testar o app nativo no próprio smartphone.
+## 🚀 Passo 1: Crie Projetos com a Sua Cara
+A melhor forma de fixar o conhecimento e enriquecer o seu portfólio é criando aplicativos que resolvam problemas reais seus ou de pessoas próximas a você.
+* **Aprenda sob demanda:** Decidiu fazer um app de rede social e precisa de *Push Notifications* (aquelas notificações que pulam na tela)? Vá no Google, pesquise a documentação, entenda e implemente. O aprendizado guiado pela necessidade é o mais efetivo!
+
+## 📸 Passo 2: Sem ideias? Faça o Tutorial Oficial do Expo!
+Se você está sem ideias para um projeto autoral agora, a documentação do Expo possui um tutorial prático incrível.
+Neste tutorial, você constrói um aplicativo diferente do nosso: um app que acessa a galeria de imagens do seu celular, permite escolher uma foto, adicionar adesivos (*stickers*) e salvar o resultado. É um ótimo exercício para aprender a lidar com a câmera e os arquivos do aparelho.
+🔗 **[Acessar o Tutorial Oficial do Expo](https://docs.expo.dev/tutorial/introduction/)**
+
+## 🗺️ Passo 3: O Mapa da Mina (`roadmap.sh`)
+Para saber exatamente o que o mercado de trabalho exige de um desenvolvedor React Native, recomendamos fortemente o uso do **Roadmap.sh**. Ele é um mapa visual de tecnologias.
+
+Neste curso, nós já cobrimos as bases principais:
+✅ Core Components (`View`, `Text`, `TextInput`, etc.)
+✅ Estilização nativa (`StyleSheet`)
+✅ Listas Otimizadas (`FlatList`)
+✅ Armazenamento Local (`AsyncStorage`)
+✅ Navegação e CLI do Expo
+
+**O que você pode explorar a seguir usando o Roadmap:**
+* **Estilização Avançada:** Pesquise sobre bibliotecas como `styled-components` ou `NativeWind` (Tailwind para React Native).
+* **Networking (Requisições HTTP):** Estude como conectar seu app a APIs externas usando `axios` ou `fetch` (ou até `Apollo Client` para GraphQL).
+* **Testes Automatizados:** Aprenda a garantir que seu app não quebre usando `Jest` e `React Native Testing Library`. (Para testes End-to-End, pesquise sobre `Detox` ou `Appium`).
+* **Recursos Nativos Avançados:** *Deep Linking* (abrir o app através de um link de site), Animações fluidas (`Reanimated`) e uso de bibliotecas de mapas e localização.
+🔗 **[Acessar o Roadmap de React Native](https://roadmap.sh/react-native)**
 
 ---
 
-## ☁️ Passo 1: Preparando o Terreno (Conta e CLI)
-Para que a Expo compile o aplicativo nos servidores deles (o que é ótimo, pois não exige um computador potente ou um Mac da nossa parte), precisamos de uma conta e da ferramenta de linha de comando.
+### 🌟 Muito Obrigado!
+Chegamos ao fim da nossa jornada de desenvolvimento do App **Money**. Não se esqueça de avaliar o curso, deixar o seu feedback e compartilhar o seu projeto rodando lá no LinkedIn!
 
-1. **Crie sua conta:** Acesse [expo.dev](https://expo.dev) e crie uma conta gratuita.
-2. **Instale o EAS CLI:** No seu terminal (pode ser fora da pasta do projeto), instale a ferramenta globalmente:
-   ```bash
-   npm install -g eas-cli
-   ```
-3. **Faça o Login:** No terminal, digite o comando abaixo e insira o e-mail e senha da conta que você acabou de criar:
-```bash
-eas login
-```
-## ⚙️ Passo 2: Inicializando o EAS no Projeto
-Agora, navegue até a pasta do seu projeto (`gestao-financeira` ou `Money`) no terminal e digite:
-```bash
-eas init
-```
-O terminal vai perguntar qual é o ID do projeto ou se deseja vinculá-lo à sua conta da Expo. Confirme as opções. Esse comando criará um arquivo muito importante na raiz do seu projeto chamado `eas.json`.
+Até a próxima oportunidade e bons códigos! 👨‍💻👩‍💻
 
-## 📝 Passo 3: Configurando o `eas.json` para gerar um APK
-Por padrão, se mandarmos a Expo fazer um build de produção para Android, ela vai gerar um arquivo `.aab` (Android App Bundle), que é o formato exigido pela Google Play Store, mas que **não pode ser instalado diretamente no celular**.
+---
 
-Como queremos um arquivo para "Distribuição Interna" (para instalar via download/QR Code), precisamos dizer para a Expo gerar um `.apk`.
-
-Abra o arquivo `eas.json` e adicione o perfil `preview` dentro da seção `build`, especificando o `buildType`:
-
-```json
-{
-  "cli": {
-    "version": ">= 3.0.0"
-  },
-  "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal"
-    },
-    "preview": {
-      "android": {
-        "buildType": "apk"
-      }
-    },
-    "production": {}
-  },
-  "submit": {
-    "production": {}
-  }
-}
-```
-## 🚀 Passo 4: Rodando o Build na Nuvem
-Chegou o grande momento! Com tudo configurado, vamos mandar o nosso código para os servidores da Expo compilarem o nosso APK.
-
-No terminal, execute o comando usando o perfil (`profile`) que acabamos de configurar:
-```bash
-eas build -p android --profile preview
-```
-
-**O que vai acontecer agora?**
-
-1. O EAS vai perguntar se você deseja gerar uma nova Android Keystore (uma chave de segurança criptografada do seu app). Digite Y (Yes).
-2. Ele vai compactar seu projeto e enviar para a fila de compilação na nuvem.
-3. **Pausa para o café:** Como estamos usando o plano gratuito da Expo, o build entra em uma fila. Esse processo pode levar de **10 a 25 minutos**. Você pode acompanhar o progresso pelo link do painel que aparecerá no seu terminal.
-
-## 📱 Passo 5: Instalando no Celular
-Quando o build terminar (mensagem de *Build Finished*), o seu terminal exibirá um **QR Code** gigante e um link.
-
-1. Abra a câmera do seu celular Android e escaneie o QR Code (ou abra o link no navegador do celular).
-2. Ele fará o download de um arquivo final `.apk`.
-3. Toque para instalar.
-
-- *Atenção*: O Android bloqueará a instalação inicialmente por segurança. Você precisará ir em Configurações e permitir a **"Instalação de aplicativos de fontes desconhecidas"**.
-4. Abra o aplicativo!
-
-### 📚 Entendendo os Tipos de Build (Teoria)
-- **Development Build:** Um "Expo Go personalizado". Você instala no celular, mas ainda precisa do terminal rodando (`npx expo start`) para ele funcionar. Usado para testar bibliotecas nativas complexas.
-- **Internal Distribution (Preview):** O que fizemos agora! Gera um `.apk` que funciona 100% offline, sem depender do seu computador. Perfeito para portfólio, testes da equipe e enviar para os amigos.
-- **Production Build:** O build final. Para subir esse build na Apple App Store ou na Google Play Store, você precisará pagar as taxas de desenvolvedor (US$ 99/ano para Apple e taxa única de US$ 25 para o Google). O EAS também tem ferramentas automáticas (`eas submit`) para enviar direto para as lojas quando você tiver essas contas!
-
-### ✅ Conclusão do Módulo
-Parabéns! 🎉 Você concluiu a jornada de desenvolvimento mobile! Criamos um projeto do zero, estruturamos telas, estilizamos, manipulamos estados globais, salvamos dados na memória do aparelho e, finalmente, geramos um aplicativo instalável de verdade.
-
-Agora você tem uma base sólida para criar seus próprios aplicativos usando React Native e Expo!
+## 🔗 Links Úteis e Referências desta Aula
+* **Roadmap de Estudos React Native:** [https://roadmap.sh/react-native](https://roadmap.sh/react-native)
+* **Tutorial de App com Câmera/Galeria (Expo):** [https://docs.expo.dev/tutorial/introduction/](https://docs.expo.dev/tutorial/introduction/)
