@@ -42,6 +42,15 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+     "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "AQUI VAI O ID DO PROJETO"
+      }
+    },
+    "owner": "lchijo"
   }
 }

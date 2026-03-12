@@ -1,173 +1,97 @@
-# 💻 Aula 07: Tela de Resumo, Lógica de Totais e Otimização com `useMemo`
+# 💻 Aula 08: Gerando o Aplicativo Final (Build com EAS) e Distribuição
 
-Chegamos à última tela do nosso aplicativo! A aba de "Resumo" será responsável por pegar todas as transações cadastradas, separá-las por categorias, somar os valores e exibir o saldo final (positivo ou negativo). Faremos isso com foco em **performance**, garantindo que o celular não trave mesmo se houver milhares de transações.
+Até o momento, nosso aplicativo só funciona se o nosso computador estiver ligado, com o terminal rodando e conectados pelo Expo Go. Mas como fazemos para gerar o arquivo final do aplicativo e enviar para outras pessoas instalarem? 
+
+Nesta aula, vamos usar o **EAS (Expo Application Services)** para compilar nosso código nas nuvens e gerar um arquivo instalável (`.apk`) para Android!
 
 ## 🎯 Objetivos da Aula
-* Criar o componente `SummaryItem` para exibir o total de cada categoria.
-* Desenvolver um algoritmo otimizado (O(n)) para somar valores sem repetir loops.
-* Utilizar o Hook `useMemo` para evitar recálculos desnecessários e melhorar a performance.
-* Exibir o saldo final com cores condicionais (verde para positivo, vermelho para negativo).
-* Desafio final: Dicas de como evoluir o app para o seu portfólio!
+* Entender a diferença entre *Development Build*, *Internal Distribution* e *Production Build*.
+* Criar uma conta gratuita no portal da Expo.
+* Instalar e configurar o `eas-cli` no projeto.
+* Configurar o arquivo `eas.json` para gerar um arquivo APK.
+* Realizar o build do aplicativo na nuvem.
+* Baixar, instalar e testar o app nativo no próprio smartphone.
 
 ---
 
-## 🧩 Passo 1: O Componente `SummaryItem`
-Este componente é muito parecido com o item da lista de transações, mas é mais enxuto: ele não mostra a data e exibe apenas a categoria e o valor total acumulado.
+## ☁️ Passo 1: Preparando o Terreno (Conta e CLI)
+Para que a Expo compile o aplicativo nos servidores deles (o que é ótimo, pois não exige um computador potente ou um Mac da nossa parte), precisamos de uma conta e da ferramenta de linha de comando.
 
-Crie o arquivo `components/SummaryItem.jsx`:
-
-```javascript
-import { StyleSheet, Text, View } from "react-native";
-import CategoryItem from "./CategoryItem";
-import { categories } from "../constants/categories";
-import { globalStyles } from "../styles/globalStyles";
-
-export default function SummaryItem({ category, value }) {
-  // Define se o texto do valor será verde (renda) ou vermelho (gasto)
-  const valueStyle = category === categories.income.name
-      ? globalStyles.positiveText
-      : globalStyles.negativeText;
-
-  return (
-    <View style={styles.itemContainer}>
-      <CategoryItem category={category} />
-      <View style={styles.textContainer}>
-        <Text style={globalStyles.primaryText}>
-          {categories[category].displayName}
-        </Text>
-        <Text style={valueStyle}>
-          {value.toLocaleString("pt-BR", {
-            style: "currency",
-            currency: "BRL",
-          })}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  itemContainer: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    paddingBottom: 4,
-  },
-  textContainer: {
-    display: "flex",
-    flex: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginLeft: 12,
-  },
-});
+1. **Crie sua conta:** Acesse [expo.dev](https://expo.dev) e crie uma conta gratuita.
+2. **Instale o EAS CLI:** No seu terminal (pode ser fora da pasta do projeto), instale a ferramenta globalmente:
+   ```bash
+   npm install -g eas-cli
+   ```
+3. **Faça o Login:** No terminal, digite o comando abaixo e insira o e-mail e senha da conta que você acabou de criar:
+```bash
+eas login
 ```
-## 🧠 Passo 2: A Tela de Resumo e a Lógica Otimizada
-Para somar os valores, poderíamos usar a função `reduce` várias vezes (uma para cada categoria). Porém, passar pelo array inteiro 5 vezes é ruim para a performance.
+## ⚙️ Passo 2: Inicializando o EAS no Projeto
+Agora, navegue até a pasta do seu projeto (`gestao-financeira` ou `Money`) no terminal e digite:
+```bash
+eas init
+```
+O terminal vai perguntar qual é o ID do projeto ou se deseja vinculá-lo à sua conta da Expo. Confirme as opções. Esse comando criará um arquivo muito importante na raiz do seu projeto chamado `eas.json`.
 
-Em vez disso, vamos usar a técnica de **HashMap**: criamos um objeto com os totais zerados e passamos pelo array de transações **apenas uma vez** (`for`), distribuindo os valores nas "caixinhas" corretas.
+## 📝 Passo 3: Configurando o `eas.json` para gerar um APK
+Por padrão, se mandarmos a Expo fazer um build de produção para Android, ela vai gerar um arquivo `.aab` (Android App Bundle), que é o formato exigido pela Google Play Store, mas que **não pode ser instalado diretamente no celular**.
 
-Abra o arquivo `app/(tabs)/summary.jsx`:
-```js
-import { useContext, useMemo } from "react";
-import { MoneyContext } from "../../contexts/GlobalState";
-import { categories } from "../../constants/categories";
-import { globalStyles } from "../../styles/globalStyles";
-import SummaryItem from "../../components/SummaryItem";
-import { StyleSheet, Text, View } from "react-native";
-import { colors } from "../../constants/colors";
+Como queremos um arquivo para "Distribuição Interna" (para instalar via download/QR Code), precisamos dizer para a Expo gerar um `.apk`.
 
-export default function Summary() {
-  const [transactions] = useContext(MoneyContext);
+Abra o arquivo `eas.json` e adicione o perfil `preview` dentro da seção `build`, especificando o `buildType`:
 
-  // Função que calcula todos os totais passando pela lista UMA única vez
-  const getTotals = () => {
-    const totals = {
-      sum: 0,
-      income: 0,
-      food: 0,
-      education: 0,
-      house: 0,
-      travel: 0,
-    };
-
-    for (let i = 0; i < transactions.length; i++) {
-      const item = transactions[i];
-
-      // Soma o valor na categoria específica
-      totals[item.category] += item.value;
-
-      // Atualiza o Saldo Geral (soma se for renda, subtrai se for gasto)
-      if (item.category === categories.income.name) {
-        totals.sum += item.value;
-      } else {
-        totals.sum -= item.value;
+```json
+{
+  "cli": {
+    "version": ">= 3.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "android": {
+        "buildType": "apk"
       }
-    }
-    return totals;
-  };
-
-  /* * A MÁGICA DA PERFORMANCE (useMemo):
-   * O React só vai executar a função getTotals de novo se o array [transactions] mudar!
-   * Isso evita cálculos pesados em renderizações desnecessárias da tela.
-   */
-  const totals = useMemo(getTotals, [transactions]);
-
-  // Define a cor do Saldo Final
-  const valueStyle = totals.sum > 0 ? globalStyles.positiveText : globalStyles.negativeText;
-
-  return (
-    <View style={globalStyles.screenContainer}>
-      <View style={globalStyles.content}>
-        
-        {/* Renderiza os Itens de Resumo */}
-        <SummaryItem category={categories.income.name} value={totals[categories.income.name]} />
-        <SummaryItem category={categories.food.name} value={totals[categories.food.name]} />
-        <SummaryItem category={categories.house.name} value={totals[categories.house.name]} />
-        <SummaryItem category={categories.education.name} value={totals[categories.education.name]} />
-        <SummaryItem category={categories.travel.name} value={totals[categories.travel.name]} />
-        
-        <View style={globalStyles.line} />
-        
-        {/* Renderiza o Saldo Final */}
-        <View style={styles.balance}>
-          <Text style={styles.balanceText}>Saldo</Text>
-          <Text style={valueStyle}>
-            {totals.sum.toLocaleString("pt-BR", {
-              style: "currency",
-              currency: "BRL",
-            })}
-          </Text>
-        </View>
-        
-      </View>
-    </View>
-  );
+    },
+    "production": {}
+  },
+  "submit": {
+    "production": {}
+  }
 }
-
-const styles = StyleSheet.create({
-  balance: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 10,
-  },
-  balanceText: {
-    fontSize: 18,
-    color: colors.primaryText,
-    fontWeight: "800",
-  },
-});
 ```
-## 🚀 Desafio Final: Destaque-se no seu Portfólio!
-Aplicativos clonados exatamente iguais aos de cursos não chamam tanta atenção de recrutadores. Agora que você tem a base sólida e o aplicativo rodando perfeitamente, **coloque a sua cara nele!** Aqui estão algumas sugestões de como evoluir esse app para o seu portfólio do GitHub:
+## 🚀 Passo 4: Rodando o Build na Nuvem
+Chegou o grande momento! Com tudo configurado, vamos mandar o nosso código para os servidores da Expo compilarem o nosso APK.
 
-1. **Filtro de Mês/Ano:** Na tela inicial e de resumo, adicione um botão para filtrar as transações apenas do mês atual.
-2. **Gráficos Visuais:** Na tela de Resumo, substitua (ou complemente) os textos por um gráfico de pizza (PieChart), mostrando a porcentagem de gastos por categoria.
-3. **Edição e Exclusão:** Permita que o usuário clique e segure (onLongPress) em uma transação na lista para abrir um modal de exclusão ou edição.
-4. **Categorias Customizadas:** Permita que o usuário crie novas categorias além das 5 originais.
+No terminal, execute o comando usando o perfil (`profile`) que acabamos de configurar:
+```bash
+eas build -p android --profile preview
+```
 
-✅ **O que alcançamos hoje?**
-Fechamos o ciclo! O App "Money" agora é um aplicativo financeiro completo, com controle de formulários avançado, navegação em abas, salvamento persistente, listagens dinâmicas e cálculos otimizados com `useMemo`.
+**O que vai acontecer agora?**
 
-**Próximo Passo:** Na nossa última aula bônus, conversaremos sobre como preparar esse aplicativo para publicação e gerar um `.apk` para instalarmos de verdade no celular!
+1. O EAS vai perguntar se você deseja gerar uma nova Android Keystore (uma chave de segurança criptografada do seu app). Digite Y (Yes).
+2. Ele vai compactar seu projeto e enviar para a fila de compilação na nuvem.
+3. **Pausa para o café:** Como estamos usando o plano gratuito da Expo, o build entra em uma fila. Esse processo pode levar de **10 a 25 minutos**. Você pode acompanhar o progresso pelo link do painel que aparecerá no seu terminal.
+
+## 📱 Passo 5: Instalando no Celular
+Quando o build terminar (mensagem de *Build Finished*), o seu terminal exibirá um **QR Code** gigante e um link.
+
+1. Abra a câmera do seu celular Android e escaneie o QR Code (ou abra o link no navegador do celular).
+2. Ele fará o download de um arquivo final `.apk`.
+3. Toque para instalar.
+
+- *Atenção*: O Android bloqueará a instalação inicialmente por segurança. Você precisará ir em Configurações e permitir a **"Instalação de aplicativos de fontes desconhecidas"**.
+4. Abra o aplicativo!
+
+### 📚 Entendendo os Tipos de Build (Teoria)
+- **Development Build:** Um "Expo Go personalizado". Você instala no celular, mas ainda precisa do terminal rodando (`npx expo start`) para ele funcionar. Usado para testar bibliotecas nativas complexas.
+- **Internal Distribution (Preview):** O que fizemos agora! Gera um `.apk` que funciona 100% offline, sem depender do seu computador. Perfeito para portfólio, testes da equipe e enviar para os amigos.
+- **Production Build:** O build final. Para subir esse build na Apple App Store ou na Google Play Store, você precisará pagar as taxas de desenvolvedor (US$ 99/ano para Apple e taxa única de US$ 25 para o Google). O EAS também tem ferramentas automáticas (`eas submit`) para enviar direto para as lojas quando você tiver essas contas!
+
+### ✅ Conclusão do Módulo
+Parabéns! 🎉 Você concluiu a jornada de desenvolvimento mobile! Criamos um projeto do zero, estruturamos telas, estilizamos, manipulamos estados globais, salvamos dados na memória do aparelho e, finalmente, geramos um aplicativo instalável de verdade.
+
+Agora você tem uma base sólida para criar seus próprios aplicativos usando React Native e Expo!
