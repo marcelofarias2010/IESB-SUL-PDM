@@ -21,6 +21,6 @@ const styles = StyleSheet.create({
     marginVertical: 2
   },
   pressed: {
-    opacity: 0.75 // Dá um efeito visual de clique
+    opacity: 0.75
   }
 });

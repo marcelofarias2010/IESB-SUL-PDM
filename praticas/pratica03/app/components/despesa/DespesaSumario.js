@@ -1,7 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 
 export default function DespesaSumario({ despesas, periodo }) {
-  // O método reduce vai percorrer a lista de despesas e somar os valores
   const somaDespesas = despesas.reduce((soma, despesa) => {
     return soma + despesa.valor;
   }, 0);
@@ -23,6 +22,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#e2eafc', 
     borderRadius: 6 
   },
-  periodo: { fontSize: 14, color: '#3b021f' },
-  soma: { fontSize: 16, fontWeight: 'bold', color: '#3b021f' }
+  periodo: { 
+    fontSize: 14, 
+    color: '#3b021f' 
+  },
+  soma: { 
+    fontSize: 16, 
+    fontWeight: 'bold', 
+    color: '#3b021f' 
+  }
 });

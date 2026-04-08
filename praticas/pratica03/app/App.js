@@ -2,17 +2,15 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import IconButton from './components/IconButton';
 
-// Importando as nossas telas
 import DespesasRecentes from './screens/DespesasRecentes';
 import TodasDespesas from './screens/TodasDespesas';
 import GerenciarDespesa from './screens/GerenciarDespesa';
+import IconButton from './components/IconButton';
 
 const Stack = createNativeStackNavigator();
 const BottomTabs = createBottomTabNavigator();
 
-// 1. Criamos a navegação das Abas Inferiores
 function DespesasOverview() {
   return (
     <BottomTabs.Navigator>
@@ -48,18 +46,15 @@ function DespesasOverview() {
   );
 }
 
-// 2. Criamos a navegação principal (Pilha) que engloba tudo
 export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator>
-        {/* A tela inicial da Pilha é o nosso grupo de Abas */}
         <Stack.Screen 
           name="DespesasOverview" 
           component={DespesasOverview} 
-          options={{ headerShown: false }} // Escondemos o cabeçalho duplo
+          options={{ headerShown: false }} 
         />
-        {/* A tela de Gerenciar Despesa fica solta na pilha para ser aberta depois */}
         <Stack.Screen 
           name="GerenciarDespesa" 
           component={GerenciarDespesa} 
