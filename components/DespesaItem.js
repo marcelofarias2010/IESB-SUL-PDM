@@ -39,3 +39,5 @@ const styles = StyleSheet.create({
     alignContent: 'left',
   },
 })
+
+export default DespesaItem;

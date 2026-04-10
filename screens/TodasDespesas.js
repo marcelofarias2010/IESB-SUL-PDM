@@ -1,4 +1,4 @@
-import DespesaSaida from '../components/despesa/DespesaSaida'
+import DespesaSaida from '../components/DespesaSaida'
 
 function TodasDespesas(){
 

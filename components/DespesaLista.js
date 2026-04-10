@@ -1,4 +1,5 @@
 import { Text, FlatList, View } from 'react-native';
+import DespesaItem from './DespesaItem';
 
 function renderDespesaItem(itemData){
     return (
