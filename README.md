@@ -1,64 +1,274 @@
-# 📱 Programação para Dispositivos Móveis (React Native)
-Repositório base destinado às aulas teóricas e às atividades práticas da disciplina. Ao longo do semestre, utilizaremos este ambiente para construir, passo a passo, um **Aplicativo de Lista de Tarefas (To-Do List)**.
+# 💰 App de Gestão Financeira
 
-## 🛠️ Ambiente de Desenvolvimento
-Para acompanhar a disciplina, você precisará das seguintes ferramentas:
+Projeto acadêmico de desenvolvimento mobile (PDM - IESB) focado na criação de um aplicativo para controle financeiro pessoal. O aplicativo permite que o usuário gerencie suas receitas e despesas, visualize relatórios dinâmicos através de gráficos, filtre transações por mês e ano, e realize o gerenciamento de sua conta de forma local.
 
-| Ferramenta | O que é? | Recomendação |
-| :--- | :--- | :--- |
-| **Editor de código** | Ambiente onde você escreverá seu código (JS, JSX, TSX). | [Visual Studio Code](https://code.visualstudio.com/) | 
-| **Ambiente de Execução** | Necessário para rodar o Metro Bundler e gerenciar pacotes. | [Node.js (versão LTS)](https://nodejs.org/pt-br/) |
-| **Versionador** | Controla e registra o histórico de alterações do código. | [Git](https://git-scm.com/) |
-| **Testes Físicos** | App para espelhar o código do seu computador direto no celular. | [Expo Go (Android/iOS)](https://expo.dev/go) |
+---
 
-## 📂 Estrutura de Pastas
-Este repositório está organizado da seguinte forma:
-- **`aulas/`**: Contém os resumos teóricos e conceitos abordados em cada encontro.
-- **`praticas/`**: Contém o código das atividades práticas desenvolvidas (nosso App de Tarefas).
+# 🚀 O que foi feito
 
-## 🚀 Fluxo de Trabalho Acadêmico
-As atividades seguem um fluxo de trabalho profissional baseado no modelo [GitFlow](https://www.atlassian.com/br/git/tutorials/comparing-workflows/gitflow-workflow).
+O projeto consistiu em desenvolver a interface e a lógica de estado de um aplicativo React Native utilizando Expo Router para navegação por abas (Tabs) e pilhas (Stacks). Foi implementado um sistema de "banco de dados em memória" utilizando a **Context API** do React (`GlobalState`), permitindo que os dados (usuários logados, categorias e transações com IDs únicos) transitem entre as telas sem a necessidade de um backend externo nesta etapa.
 
-### 1. Configuração Inicial (Realizar apenas uma vez)
-1. **Criar Repositório**: Clique no botão verde `Use this template`, no topo desta página, e escolha `Create a new repository` para criar a sua cópia.
-2. **Clonar Repositório**: Faça o clone do *seu* repositório para a sua máquina:
-```bash
-git clone [https://github.com/SEU_USUARIO/NOME_DO_SEU_REPOSITORIO.git](https://github.com/SEU_USUARIO/NOME_DO_SEU_REPOSITORIO.git)
-```
+## Principais funcionalidades implementadas
 
-### 2.Configurar Git: Certifique-se de que seu nome e e-mail estão corretos:
-```bash
-git config --global user.name "Seu Nome"
-git config --global user.email "seu@email.com"
-```
+* Sistema de Cadastro e Login (validação local em memória).
+* Dashboard (Início) com listagem de transações, saudação com o nome do usuário logado e opção de exclusão (lixeira).
+* Filtros dinâmicos por mês e ano.
+* Tela de Resumo com cálculo matemático automático de Receitas, Despesas e Saldo.
+* Gráfico de Pizza segmentado dinamicamente pelas categorias de despesas.
 
-## Ciclo de Cada Prática (Repetir a cada aula)
-Para cada nova funcionalidade do nosso App, siga este fluxo:
-1. **Crie a Issue:** Acesse a aba Issues no seu GitHub, clique em New issue e use o template da prática do dia.
-2. **Crie a Branch:** A partir da branch main (ou develop), crie uma nova branch para a funcionalidade:
-```bash
-git checkout -b feature/praticaXX
-```
-3. Rode o Projeto: Acesse a pasta correspondente, instale as dependências e inicie o Expo:
+---
+
+# 🛠️ Tecnologias e Bibliotecas Utilizadas
+
+* **React Native** e **Expo**: Frameworks base para a construção do aplicativo.
+* **Expo Router**: Sistema de roteamento baseado em arquivos (File-based routing).
+* **React Context API**: Gerenciamento de estado global da aplicação.
+* **React Native Chart Kit** e **React Native SVG**: Renderização do gráfico de pizza animado na tela de Resumo.
+* **Expo Google Fonts** (`@expo-google-fonts/poppins` e `expo-font`): Configuração e carregamento da tipografia personalizada (Poppins) em toda a interface.
+* **Expo Vector Icons (Ionicons)**: Ícones da interface gráfica.
+
+---
+
+# 💻 Passo a Passo para Instalação e Execução
+
+Para rodar o projeto localmente e avaliar o aplicativo, siga os passos abaixo no terminal da sua máquina:
+
+## 1. Pré-requisitos
+
+Certifique-se de ter o [Node.js](https://nodejs.org/) instalado.
+
+---
+
+## 2. Clone o repositório e acesse a pasta do projeto
+
+Abra o terminal na pasta raiz do projeto (`gestao-financeira`).
+
+---
+
+## 3. Instalando as dependências base
+
 ```bash
 npm install
-npx expo start
 ```
-4. Desenvolva e Teste: Escreva o código solicitado na prática e teste no seu celular usando o Expo Go.
-5. Salve e Envie (Commit & Push):
+
+---
+
+## 4. Instalando as bibliotecas de Fontes e Gráficos
+
+Para garantir que as fontes personalizadas e o gráfico de pizza funcionem corretamente, instale os pacotes do Expo:
+
 ```bash
-git add .
-git commit -m "Feat: Finaliza a implementação da Prática XX"
-git push origin feature/praticaXX
+npx expo install expo-font @expo-google-fonts/poppins
+npx expo install react-native-chart-kit react-native-svg @react-native-community/datetimepicker
 ```
-6. Solicite a Revisão (Pull Request): No GitHub, abra um Pull Request da sua branch feature/praticaXX para a branch principal.
 
-- ⚠️ Atenção!
-- Se o check ✅ não aparecer no `Pull Request`, há erros que precisam ser corrigidos antes da avaliação.
+---
 
-## Feedback e Avaliação
-Envie o link do seu Pull Request pela plataforma de ensino. A avaliação usará o sistema de **Code Review:**
-- **Approve (Aprovado):** Código cumpre os requisitos. Faça o merge!
-- **Request Changes (Solicitação de Ajustes):** Há bugs ou melhorias necessárias. Corrija localmente, faça um novo commit e push na mesma branch, e avise no PR para nova revisão.
+## 5. Verificação do app.json
 
+Certifique-se de que o arquivo `app.json` possui o pacote Android configurado corretamente para que o emulador consiga identificar o app:
+
+```json
+"android": {
+  "package": "com.seu_nome.gestaofinanceira"
+}
+```
+
+---
+
+## 6. Iniciando o aplicativo (Limpando o cache)
+
+Para rodar o servidor do Expo e evitar falhas de memória ou travamentos no emulador, inicie com a flag `-c`:
+
+```bash
+npx expo start -c
+```
+
+---
+
+## 7. Abrindo no Emulador ou Celular
+
+### No Emulador Android
+
+Com o Android Studio aberto e o emulador rodando, pressione a tecla `a` no terminal.
+
+Se ocorrer recusa de porta (`TCP 5554`), faça um **Cold Boot** no emulador pelo Android Studio e tente novamente.
+
+### No Celular Físico
+
+Baixe o app **Expo Go** (Android/iOS), conecte na mesma rede Wi-Fi do computador e escaneie o QR Code que aparece no terminal.
+
+---
+
+# 🧪 Modelos de Teste e Respostas Esperadas do Sistema
+
+Abaixo estão os cenários de teste configurados no aplicativo para validar os requisitos solicitados pelo professor.
+
+---
+
+# ✅ Teste 1: Autenticação (Cadastro e Login)
+
+## Ação
+
+Na tela de Login, clicar em **"Solicitar cadastro"**.
+
+Preencher:
+
+* nome;
+* e-mail sem `@`;
+* ou senha com menos de 6 caracteres;
+
+e tentar concluir.
+
+## Resposta Esperada
+
+O sistema deve bloquear a ação e exibir um aviso em vermelho informando a regra violada.
+
+---
+
+## Ação
+
+Preencher corretamente:
+
+* Nome: `Marcos`
+* E-mail: `teste@teste.com`
+* Senha: `123456`
+
+Realizar o cadastro e depois fazer login com estas credenciais.
+
+## Resposta Esperada
+
+O sistema exibe:
+
+```txt
+Cadastro realizado com sucesso
+```
+
+Depois retorna à tela de login e, ao entrar, navega para a tela **Início** exibindo a saudação personalizada:
+
+```txt
+Olá, Marcos!
+```
+
+---
+
+# ✅ Teste 2: Adição e Listagem de Transação
+
+## Ação
+
+Entrar na aba **Adicionar** (botão `+`), selecionar a categoria **Moradia**, inserir o valor:
+
+```txt
+900.00
+```
+
+Adicionar uma descrição:
+
+```txt
+Aluguel
+```
+
+e salvar.
+
+## Resposta Esperada
+
+O app deve retornar para a tela **Início** e a nova transação deve aparecer na lista na cor correspondente:
+
+* vermelho para despesa;
+* com o sinal `-`.
+
+---
+
+# ✅ Teste 3: Cálculo, Separação de Receitas/Despesas e Gráfico
+
+## Ação
+
+Adicionar uma transação do tipo Receita/Saldo:
+
+* Categoria: `Salário`
+* Valor: `2000.00`
+
+Depois acessar a aba **Resumo**.
+
+## Resposta Esperada
+
+O sistema deve separar matematicamente as entradas e saídas.
+
+A tela mostrará:
+
+```txt
+Receitas: R$ 2000.00
+Despesas: R$ 900.00
+Saldo do período: R$ 1100.00
+```
+
+O saldo deve aparecer na cor verde.
+
+---
+
+## Ação Visual
+
+O Gráfico de Pizza deve ser renderizado mostrando apenas a fatia de:
+
+```txt
+Moradia
+```
+
+(Despesas), ignorando a transação de Salário, validando a lógica de filtragem do gráfico.
+
+---
+
+# ✅ Teste 4: Exclusão de Transação (Lixeira)
+
+## Ação
+
+Na aba **Início**, clicar no ícone de lixeira ao lado da transação de:
+
+```txt
+Aluguel
+```
+
+## Resposta Esperada
+
+A transação deve desaparecer imediatamente da lista.
+
+Ao acessar a aba **Resumo**:
+
+```txt
+Despesas: R$ 0.00
+```
+
+e o Gráfico de Pizza deve exibir a mensagem:
+
+```txt
+Sem despesas neste período
+```
+
+---
+
+# ✅ Teste 5: Filtros de Mês e Ano
+
+## Ação
+
+Na aba **Início**, alterar o "Pill" de seleção do mês atual:
+
+```txt
+Mai
+```
+
+para um mês sem lançamentos:
+
+```txt
+Jun
+```
+
+## Resposta Esperada
+
+A lista de transações deve ficar completamente vazia e exibir o texto:
+
+```txt
+Nenhuma transação encontrada
+```
+
+comprovando que as listagens respeitam os filtros de data e ano.
 

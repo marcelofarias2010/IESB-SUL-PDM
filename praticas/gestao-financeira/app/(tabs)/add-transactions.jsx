@@ -1,153 +1,189 @@
-import {
-  ActivityIndicator,
-  Alert,
-  Keyboard,
-  KeyboardAvoidingView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableWithoutFeedback,
-  View,
-} from "react-native";
-import { useContext, useMemo, useRef, useState } from "react";
-import { globalStyles } from "../../styles/globalStyles";
-import Button from "../../components/Button";
-import DescriptionInput from "../../components/DescriptionInput";
-import CurrencyInput from "../../components/CurrencyInput";
-import DatePicker from "../../components/DatePicker";
-import CategoryPicker from "../../components/CategoryPicker";
-import { MoneyContext } from "../../contexts/GlobalState";
-import { colors } from "../../constants/colors";
+import React, { useState, useContext } from 'react';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker'; 
+import { router } from 'expo-router';
+import { MoneyContext } from '../../contexts/GlobalState';
+import { colors } from '../../constants/colors';
+import { globalStyles } from '../../styles/globalStyles';
 
-/**
- * Tela "Adicionar Transação".
- *
- * O formulário escolhe a categoria padrão de forma dinâmica (a primeira
- * `isIncome` ou, na ausência, a primeira da lista). Em caso de falha de
- * rede, exibe Alert e mantém o formulário preenchido para o usuário tentar
- * novamente.
- *
- * @returns {JSX.Element}
- */
 export default function AddTransactions() {
-  const { categories, loading, addTransaction } = useContext(MoneyContext);
-  const valueInputRef = useRef();
+  const { categories, addTransaction } = useContext(MoneyContext);
 
-  const defaultCategoryId = useMemo(() => {
-    if (categories.length === 0) return "";
-    const income = categories.find((c) => c.isIncome);
-    return income ? income.id : categories[0].id;
-  }, [categories]);
+  const [description, setDescription] = useState('');
+  const [value, setValue] = useState('');
+  
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  
+  const [type, setType] = useState('Saldo');
+  const [showTypeDropdown, setShowTypeDropdown] = useState(false);
+  
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
-  const buildInitialForm = () => ({
-    description: "",
-    value: 0,
-    date: new Date(),
-    categoryId: defaultCategoryId,
-  });
+  const filteredCategories = categories;
 
-  const [form, setForm] = useState(buildInitialForm);
-  const [submitting, setSubmitting] = useState(false);
-
-  // mantém o categoryId default coerente com a lista carregada
-  if (!form.categoryId && defaultCategoryId) {
-    setForm((prev) => ({ ...prev, categoryId: defaultCategoryId }));
-  }
-
-  const handleAdd = async () => {
-    if (!form.description.trim()) {
-      Alert.alert("Informe a descrição.");
-      return;
-    }
-    if (!form.value || form.value <= 0) {
-      Alert.alert("Informe um valor maior que zero.");
-      return;
-    }
-    if (!form.categoryId) {
-      Alert.alert("Selecione uma categoria.");
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      await addTransaction({
-        description: form.description.trim(),
-        value: form.value,
-        date: form.date,
-        categoryId: form.categoryId,
-      });
-      setForm(buildInitialForm());
-      Alert.alert("Transação adicionada com sucesso!");
-    } catch (e) {
-      Alert.alert("Erro ao salvar", e.message ?? "Tente novamente.");
-    } finally {
-      setSubmitting(false);
+  const onChangeDate = (event, selectedDate) => {
+    setShowDatePicker(Platform.OS === 'ios'); 
+    if (selectedDate) {
+      setDate(selectedDate);
     }
   };
 
-  if (loading) {
-    return (
-      <View style={[globalStyles.screenContainer, styles.center]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={globalStyles.secondaryText}>Carregando categorias...</Text>
-      </View>
-    );
-  }
+  const handleSave = async () => {
+    if (!description || !value || !selectedCategory) {
+      return Alert.alert('Erro', 'Preencha todos os campos.');
+    }
 
-  if (categories.length === 0) {
-    return (
-      <View style={[globalStyles.screenContainer, styles.center]}>
-        <Text style={globalStyles.primaryText}>
-          Nenhuma categoria cadastrada.
-        </Text>
-        <Text style={globalStyles.secondaryText}>
-          Vá até a aba &quot;Categorias&quot; para criar a primeira.
-        </Text>
-      </View>
-    );
-  }
+    const numericValue = parseFloat(value.replace(/[^\d.,]/g, '').replace(',', '.'));
+    const formattedDate = date.toISOString().split('T')[0];
+
+    try {
+      await addTransaction({
+        id: String(Date.now()),
+        description,
+        value: numericValue,
+        date: formattedDate,
+        category: selectedCategory, 
+        type: type.toLowerCase() 
+      });
+      
+      Alert.alert('Sucesso', 'Transação adicionada!');
+      setDescription('');
+      setValue('');
+      setDate(new Date());
+      setSelectedCategory(null);
+      
+      router.push('/(tabs)/');
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível salvar a transação.');
+    }
+  };
 
   return (
-    <KeyboardAvoidingView style={globalStyles.screenContainer}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <ScrollView style={globalStyles.content}>
-          <View style={styles.form}>
-            <DescriptionInput
-              form={form}
-              setForm={setForm}
-              valueInputRef={valueInputRef}
-            />
-            <CurrencyInput
-              form={form}
-              setForm={setForm}
-              valueInputRef={valueInputRef}
-            />
-            <DatePicker form={form} setForm={setForm} />
-            <CategoryPicker
-              form={form}
-              setForm={setForm}
-              categories={categories}
-            />
+    <View style={[globalStyles.screenContainer, styles.container]}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.form}>
+        
+        <Text style={styles.label}>Descrição</Text>
+        <TextInput
+          style={styles.input}
+          value={description}
+          onChangeText={setDescription}
+          placeholder="Ex: Aluguel"
+        />
+
+        <Text style={styles.label}>Valor</Text>
+        <TextInput
+          style={styles.input}
+          value={value}
+          onChangeText={setValue}
+          placeholder="R$ 0,00"
+          keyboardType="numeric"
+        />
+
+        <Text style={styles.label}>Data</Text>
+        <TouchableOpacity 
+          style={styles.inputIconContainer} 
+          activeOpacity={0.8} 
+          onPress={() => setShowDatePicker(true)}
+        >
+          <Text style={styles.inputWithIcon}>
+            {date.toLocaleDateString('pt-BR')}
+          </Text>
+          <Ionicons name="calendar-outline" size={20} color="#888" style={styles.icon} />
+        </TouchableOpacity>
+
+        {showDatePicker && (
+          <DateTimePicker
+            value={date}
+            mode="date"
+            display="default"
+            onChange={onChangeDate}
+          />
+        )}
+
+        <Text style={styles.label}>Tipo</Text>
+        <TouchableOpacity 
+          style={styles.dropdownButton} 
+          activeOpacity={0.8}
+          onPress={() => setShowTypeDropdown(!showTypeDropdown)}
+        >
+          <Text style={styles.dropdownText}>{type}</Text>
+          <Ionicons name={showTypeDropdown ? "chevron-up" : "chevron-down"} size={20} color="#3B1578" />
+        </TouchableOpacity>
+        
+        {showTypeDropdown && (
+          <View style={styles.dropdownList}>
+            <TouchableOpacity 
+              style={styles.dropdownItem} 
+              onPress={() => { setType('Saldo'); setShowTypeDropdown(false); }}
+            >
+              <Text style={styles.dropdownItemText}>Saldo</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.dropdownItem} 
+              onPress={() => { setType('Despesa'); setShowTypeDropdown(false); }}
+            >
+              <Text style={styles.dropdownItemText}>Despesa</Text>
+            </TouchableOpacity>
           </View>
-          <Button onPress={handleAdd} disabled={submitting}>
-            {submitting ? "Salvando..." : "Adicionar"}
-          </Button>
-        </ScrollView>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+        )}
+
+        <Text style={styles.label}>Categoria</Text>
+        <TouchableOpacity 
+          style={styles.dropdownButton} 
+          activeOpacity={0.8}
+          onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
+        >
+          <Text style={styles.dropdownText}>
+            {selectedCategory ? (selectedCategory.displayName || selectedCategory.name) : 'Selecione uma categoria'}
+          </Text>
+          <Ionicons name={showCategoryDropdown ? "chevron-up" : "chevron-down"} size={20} color="#3B1578" />
+        </TouchableOpacity>
+        
+        {showCategoryDropdown && (
+          <View style={styles.dropdownList}>
+            {filteredCategories.length > 0 ? (
+              filteredCategories.map((cat) => (
+                <TouchableOpacity 
+                  key={cat.id} 
+                  style={styles.dropdownItem} 
+                  onPress={() => { setSelectedCategory(cat); setShowCategoryDropdown(false); }}
+                >
+                  <Text style={styles.dropdownItemText}>{cat.displayName || cat.name}</Text>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <Text style={[styles.dropdownItemText, { padding: 12, color: '#888' }]}>
+                Nenhuma categoria encontrada.
+              </Text>
+            )}
+          </View>
+        )}
+
+        <TouchableOpacity style={styles.submitButton} onPress={handleSave}>
+          <Text style={styles.submitButtonText}>Adicionar</Text>
+        </TouchableOpacity>
+
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  form: {
-    gap: 12,
-    marginBottom: 40,
-    marginTop: 10,
-  },
-  center: {
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    padding: 24,
-  },
+  container: { paddingTop: 10, backgroundColor: '#FAFAFC' },
+  form: { paddingHorizontal: 20, paddingBottom: 40 },
+  label: { fontFamily: 'Poppins-Regular', fontSize: 13, color: '#444', marginBottom: 6 },
+  input: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E8E4F0', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, fontFamily: 'Poppins-Regular', marginBottom: 16 },
+  inputIconContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E8E4F0', borderRadius: 8, marginBottom: 16 },
+  inputWithIcon: { flex: 1, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, fontFamily: 'Poppins-Regular', color: '#333' },
+  icon: { paddingHorizontal: 14 },
+  dropdownButton: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#3B1578', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 16 },
+  dropdownText: { fontSize: 15, fontFamily: 'Poppins-Regular', color: '#333' },
+  dropdownList: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E8E4F0', borderRadius: 8, marginTop: -10, marginBottom: 16, elevation: 2 },
+  dropdownItem: { paddingVertical: 12, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
+  dropdownItemText: { fontSize: 15, fontFamily: 'Poppins-Regular', color: '#333' },
+  submitButton: { backgroundColor: '#5A319B', borderRadius: 8, paddingVertical: 14, alignItems: 'center', marginTop: 10 },
+  submitButtonText: { color: '#FFFFFF', fontFamily: 'Poppins-SemiBold', fontSize: 16 }
 });

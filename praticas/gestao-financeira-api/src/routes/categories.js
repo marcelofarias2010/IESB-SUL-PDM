@@ -1,56 +1,42 @@
 import { Router } from "express";
-import { prisma } from "../lib/prisma.js";
-import {
-  createCategorySchema,
-  updateCategorySchema,
-} from "../schemas/categorySchema.js";
+import { prisma } from "../lib/prisma.js"; // Ou a forma como seu prisma está importado no topo
 
 const router = Router();
 
-// GET /categories - lista todas as categorias
-router.get("/", async (req, res, next) => {
-  try {
-    const categories = await prisma.category.findMany({
-      orderBy: { displayName: "asc" },
-    });
-    res.json(categories);
-  } catch (e) { next(e); }
-});
+// ... (Mantenha suas outras rotas de router.get e router.post aqui em cima) ...
 
-// POST /categories - cria uma nova categoria
-router.post("/", async (req, res, next) => {
-  try {
-    const data = createCategorySchema.parse(req.body);
-    const category = await prisma.category.create({ data });
-    res.status(201).json(category);
-  } catch (e) { next(e); }
-});
+// 1. Troque "app.delete('/categories/:id'" por "router.delete('/:id'"
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
 
-// PUT /categories/:id - atualiza categoria existente
-router.put("/:id", async (req, res, next) => {
   try {
-    const data = updateCategorySchema.parse(req.body);
-    const category = await prisma.category.update({
-      where: { id: req.params.id },
-      data,
-    });
-    res.json(category);
-  } catch (e) { next(e); }
-});
+    const category = await prisma.category.findUnique({ where: { id } });
+    if (!category) return res.status(404).send({ error: "Categoria não encontrada" });
 
-// DELETE /categories/:id - remove categoria (bloqueia se for padrão)
-router.delete("/:id", async (req, res, next) => {
-  try {
-    const existing = await prisma.category.findUnique({
-      where: { id: req.params.id },
-    });
-    if (!existing) return res.status(404).json({ error: "Categoria não encontrada" });
-    if (existing.isDefault) {
-      return res.status(400).json({ error: "Categorias padrão não podem ser excluídas" });
+    const fixed = ['receita', 'alimentacao', 'transporte', 'moradia', 'lazer'];
+    const categoryName = category.name.trim().toLowerCase();
+
+    console.log("Tentando excluir a categoria:", categoryName);
+    console.log("Está na lista de fixas?", fixed.includes(categoryName));
+
+    if (fixed.includes(categoryName)) {
+      return res.status(400).send({ error: "Essa categoria é protegida pelo sistema!" });
     }
-    await prisma.category.delete({ where: { id: req.params.id } });
-    res.status(204).send();
-  } catch (e) { next(e); }
+
+    const count = await prisma.transaction.count({ where: { categoryId: id } });
+    if (count > 0) {
+      return res.status(400).send({ error: "Categoria possui transações vinculadas" });
+    }
+
+    await prisma.category.delete({ where: { id } });
+    return res.status(204).send();
+    
+  } catch (err) {
+    console.error("Erro interno no servidor:", err); 
+    return res.status(400).send({ 
+      error: "Erro ao excluir: " + (err.message || "Erro desconhecido") 
+    });
+  }
 });
 
 export default router;

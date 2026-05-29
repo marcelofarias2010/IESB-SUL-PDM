@@ -1,118 +1,81 @@
-import { createContext, useCallback, useEffect, useState } from "react";
-import { api } from "../services/api";
+// contexts/GlobalState.js
+import React, { createContext, useState } from 'react';
+import { View } from 'react-native';
 
 export const MoneyContext = createContext();
 
-/**
- * Provider global do app.
- *
- * Centraliza:
- *  - hidratação inicial das categorias e transações a partir da API REST;
- *  - estado de carregamento e erro de rede;
- *  - ações para criar/excluir transações e categorias mantendo o estado em sync.
- *
- * O estado **não** é mais persistido em AsyncStorage. A fonte de verdade é o
- * banco MySQL exposto pela API (`gestao-financeira-api/`).
- *
- * @param {{ children: React.ReactNode }} props
- * @returns {JSX.Element} Provider com o objeto de contexto exposto via `MoneyContext`.
- */
-export default function GlobalState({ children }) {
+export default function GlobalState({ children, onLayout }) {
   const [transactions, setTransactions] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  
+  const [categories, setCategories] = useState([
+    { id: '1', name: 'Alimentação', type: 'despesa' },
+    { id: '2', name: 'Transporte', type: 'despesa' },
+    { id: '3', name: 'Moradia', type: 'despesa' },
+    { id: '4', name: 'Salário', type: 'receita' },
+    { id: '5', name: 'Saldo', type: 'saldo' }
+  ]);
 
-  /**
-   * Recarrega categorias e transações do servidor em paralelo.
-   *
-   * @returns {Promise<void>} Resolve quando ambos os GETs terminarem.
-   */
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [cats, txs] = await Promise.all([
-        api.listCategories(),
-        api.listTransactions(),
-      ]);
-      setCategories(cats);
-      setTransactions(txs);
-    } catch (e) {
-      setError(e.message ?? "Falha ao carregar dados do servidor");
-    } finally {
-      setLoading(false);
+  const [users, setUsers] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // CORREÇÃO 1: Adicionando um ID para a transação poder ser excluída
+  const addTransaction = (transaction) => {
+    const newTransaction = {
+      ...transaction,
+      id: String(Date.now() + Math.random()) // Gera um ID único
+    };
+    setTransactions([...transactions, newTransaction]);
+  };
+
+  // CORREÇÃO 2: Criando a função de excluir transação
+  const removeTransaction = (id) => {
+    setTransactions(transactions.filter(t => t.id !== id));
+  };
+
+  const addCategory = (category) => {
+    setCategories([...categories, category]);
+  };
+
+  const removeCategory = (id) => {
+    setCategories(categories.filter(category => category.id !== id));
+  };
+
+  const registerUser = (userData) => {
+    setUsers((prev) => [...prev, userData]);
+  };
+
+  const loginUser = (email, password) => {
+    const foundUser = users.find(u => u.email === email && u.password === password);
+    if (foundUser) {
+      setCurrentUser(foundUser);
+      return true;
     }
-  }, []);
+    return false;
+  };
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
-
-  /**
-   * Cria uma nova transação no servidor e adiciona-a ao estado local.
-   *
-   * @param {{description: string, value: number, date: Date|string, categoryId: string}} data
-   * @returns {Promise<object>} Transação criada (já com a categoria expandida).
-   */
-  const addTransaction = useCallback(async (data) => {
-    const created = await api.createTransaction(data);
-    setTransactions((prev) => [created, ...prev]);
-    return created;
-  }, []);
-
-  /**
-   * Exclui uma transação no servidor e remove-a do estado local.
-   *
-   * @param {string} id - id (cuid) da transação.
-   * @returns {Promise<void>}
-   */
-  const removeTransaction = useCallback(async (id) => {
-    await api.deleteTransaction(id);
-    setTransactions((prev) => prev.filter((t) => t.id !== id));
-  }, []);
-
-  /**
-   * Cria uma nova categoria no servidor e adiciona-a ao estado local.
-   *
-   * @param {{name: string, displayName: string, icon: string, background: string, isIncome?: boolean}} data
-   * @returns {Promise<object>} Categoria criada.
-   */
-  const addCategory = useCallback(async (data) => {
-    const created = await api.createCategory(data);
-    setCategories((prev) =>
-      [...prev, created].sort((a, b) => a.displayName.localeCompare(b.displayName))
-    );
-    return created;
-  }, []);
-
-  /**
-   * Exclui uma categoria no servidor e remove-a do estado local.
-   * Categorias padrão (`isDefault`) são bloqueadas pelo back-end.
-   *
-   * @param {string} id - id (cuid) da categoria.
-   * @returns {Promise<void>}
-   */
-  const removeCategory = useCallback(async (id) => {
-    await api.deleteCategory(id);
-    setCategories((prev) => prev.filter((c) => c.id !== id));
-  }, []);
+  const logoutUser = () => {
+    setCurrentUser(null);
+  };
 
   return (
-    <MoneyContext.Provider
-      value={{
-        transactions,
+    <View style={{ flex: 1 }} onLayout={onLayout}>
+      <MoneyContext.Provider value={{ 
+        transactions, 
+        addTransaction, 
+        removeTransaction, // Não esqueça de exportar aqui
+        setTransactions,
         categories,
-        loading,
-        error,
-        refresh,
-        addTransaction,
-        removeTransaction,
+        setCategories,
         addCategory,
         removeCategory,
-      }}
-    >
-      {children}
-    </MoneyContext.Provider>
+        users,
+        currentUser,
+        registerUser,
+        loginUser,
+        logoutUser
+      }}>
+        {children}
+      </MoneyContext.Provider>
+    </View>
   );
 }
