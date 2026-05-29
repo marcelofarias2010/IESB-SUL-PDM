@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "Gestão Financeira",
+    "slug": "gestao-financeira-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.gestaofinanceira.app"
+    },
+
+    "android": {
+      "compileSdkVersion": 35,
+      "targetSdkVersion": 35,
+      "minSdkVersion": 24,
+      "package": "com.gestaofinanceira.app"
+    },
+
+    "web": {},
+
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-asset"
+    ],
+
+    "scheme": "gestaofinanceira",
+
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
