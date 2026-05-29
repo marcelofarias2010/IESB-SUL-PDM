@@ -1,68 +1,86 @@
-import { Tabs } from "expo-router";
-import { MaterialIcons } from "@expo/vector-icons";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { colors } from "../../constants/colors";
+import { Tabs, router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 
-export default function TabsLayout() {
+export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarHideOnKeyboard: true,
-        headerStyle: { backgroundColor: colors.primary },
-        headerTintColor: colors.primaryContrast,
-        headerTitleAlign: "center",
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.inactive,
-        tabBarStyle: {
-          height: 60,
-          paddingTop: 5,
-          backgroundColor: colors.background,
+        headerShown: true, // 1. Reativa o cabeçalho para todas as telas
+        headerTitleAlign: 'center', // 2. Centraliza o título como no seu design
+        headerStyle: {
+          backgroundColor: '#FFFFFF',
+          borderBottomWidth: 1,
+          borderBottomColor: '#E8E4F0',
+          elevation: 0, // Remove sombra no Android
+          shadowOpacity: 0, // Remove sombra no iOS
         },
-        tabBarButton: (props) => (
-          <TouchableOpacity {...props} activeOpacity={0.8} />
+        headerTitleStyle: {
+          fontFamily: 'Poppins-Bold',
+          fontSize: 18,
+          color: '#3B1578', // Roxo padrão dos seus títulos
+        },
+        // 3. Cria o botão "Sair" nativo para todas as telas direcionando para o Login ('/')
+        headerRight: () => (
+          <TouchableOpacity 
+            onPress={() => router.replace('/')} 
+            style={styles.logoutButton}
+          >
+            <Text style={styles.logoutText}>Sair</Text>
+          </TouchableOpacity>
         ),
+        tabBarActiveTintColor: '#3B1578', 
+        tabBarInactiveTintColor: '#A0A0A0', 
+        tabBarStyle: {
+          backgroundColor: '#FFFFFF',
+          borderTopWidth: 1,
+          borderTopColor: '#E8E4F0',
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+        tabBarLabelStyle: {
+          fontFamily: 'Poppins-Regular',
+          fontSize: 12,
+        }
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="inicio"
         options={{
-          title: "Transações",
-          tabBarIcon: ({ color }) => (
-            <MaterialIcons name="attach-money" size={28} color={color} />
+          title: 'Início',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" size={size} color={color} />
           ),
         }}
       />
-      <Tabs.Screen
-        name="categories"
-        options={{
-          title: "Categorias",
-          tabBarIcon: ({ color }) => (
-            <MaterialIcons name="category" size={26} color={color} />
-          ),
-        }}
-      />
+      
       <Tabs.Screen
         name="add-transactions"
         options={{
-          title: "Adicionar Transação",
-          tabBarLabel: "",
-          tabBarIcon: () => (
-            <View style={styles.addButton}>
-              <MaterialIcons
-                name="add"
-                size={40}
-                color={colors.primaryContrast}
-              />
-            </View>
+          title: 'Adicionar',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="add-circle" size={size} color={color} />
           ),
         }}
       />
+
       <Tabs.Screen
         name="summary"
         options={{
-          title: "Resumo",
-          tabBarIcon: ({ color }) => (
-            <MaterialIcons name="pie-chart" size={28} color={color} />
+          title: 'Resumo',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="pie-chart" size={size} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="categories"
+        options={{
+          title: 'Categorias',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="pricetags" size={size} color={color} />
           ),
         }}
       />
@@ -71,13 +89,14 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  addButton: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    height: 64,
-    width: 64,
-    borderRadius: 32,
-    backgroundColor: colors.primary,
+  logoutButton: {
+    marginRight: 20,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  logoutText: {
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: 14,
+    color: '#D93025', // Vermelho para o Sair
   },
 });

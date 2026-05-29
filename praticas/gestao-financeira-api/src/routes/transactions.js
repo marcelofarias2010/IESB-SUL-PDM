@@ -43,12 +43,18 @@ router.put("/:id", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// DELETE /transactions/:id
-router.delete("/:id", async (req, res, next) => {
+
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+  
   try {
-    await prisma.transaction.delete({ where: { id: req.params.id } });
-    res.status(204).send();
-  } catch (e) { next(e); }
+    await prisma.transaction.delete({
+      where: { id: id }
+    });
+    return res.status(204).send();
+  } catch (error) {
+    return res.status(400).json({ error: "Erro ao excluir transação" });
+  }
 });
 
 export default router;

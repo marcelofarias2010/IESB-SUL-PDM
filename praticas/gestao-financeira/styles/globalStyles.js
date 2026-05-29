@@ -1,49 +1,51 @@
-import { StyleSheet } from "react-native"
-import { colors } from "../constants/colors"
+// styles/globalStyles.js
+import { StyleSheet } from 'react-native';
+import { colors } from '../constants/colors';
 
 export const globalStyles = StyleSheet.create({
   screenContainer: {
-    display: "flex",
-    flex: 1
+    flex: 1,
+    backgroundColor: '#F8F7FA', // Um fundo leve para os cards brancos destacarem
+    padding: 16,
   },
-  content: {
-    gap: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 20
+  titleText: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 22,
+    color: colors.textTitle,
+    marginBottom: 4,
+  },
+  bodyText: {
+    fontFamily: 'Poppins',
+    fontSize: 14,
+    color: colors.textBody,
+  },
+  subtitleText: {
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: 16,
+    color: colors.textTitle,
+  },
+  transactionItem: {
+    backgroundColor: colors.card,
+    borderRadius: 15,
+    padding: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    // Sombra suave para o card
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3.84,
+    elevation: 2,
   },
   input: {
-    height: 40,
-    paddingHorizontal: 16,
-    borderColor: colors.secondaryText,
+    backgroundColor: colors.card,
+    borderRadius: 10,
+    padding: 15,
+    fontFamily: 'Poppins',
+    fontSize: 15,
     borderWidth: 1,
-    borderRadius: 8,
-    flexGrow: 1
-  },
-  inputLabel: {
-    fontSize: 16,
-    color: colors.primaryText,
-    marginBottom: 4
-  },
-  line: {
-    backgroundColor: colors.secondaryText,
-    height: 1,
-    opacity: 0.5,
-    marginBottom: 4
-  },
-  primaryText: {
-    fontSize: 16,
-    color: colors.primaryText
-  },
-  secondaryText: {
-    fontSize: 12,
-    color: colors.secondaryText
-  },
-  positiveText: {
-    fontSize: 16,
-    color: colors.positiveText
-  },
-  negativeText: {
-    fontSize: 16,
-    color: colors.negativeText
-  },
-})
+    borderColor: colors.border,
+    color: colors.textTitle
+  }
+});
